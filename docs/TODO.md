@@ -593,16 +593,255 @@
 
 ## 11. 반응형 및 애니메이션
 
-- [ ] 반응형 브레이크포인트 적용
-  - [ ] Mobile (< 768px): BottomNav, Header 표시
-  - [ ] Tablet (768px ~ 1023px): Icon-only Sidebar
-  - [ ] Desktop (1024px+): Full Sidebar
-- [ ] 좋아요 애니메이션
-  - [ ] 클릭 시 scale(1.3) → scale(1) (0.15초)
-  - [ ] 더블탭 시 큰 하트 fade in/out (1초)
-- [ ] 로딩 상태
-  - [ ] Skeleton UI (PostCardSkeleton)
-  - [ ] Shimmer 효과
+### 11.1. 반응형 브레이크포인트 검증 및 개선
+
+- [x] 레이아웃 컴포넌트 반응형 검증
+
+  - [x] `components/layout/Sidebar.tsx` 검증
+    - [x] Mobile (< 768px): `hidden md:block` 확인 (구현됨)
+    - [x] Tablet (768px ~ 1023px): `lg:hidden` 확인, 72px 너비 확인 (구현됨)
+    - [x] Desktop (1024px+): `hidden lg:block` 확인, 244px 너비 확인 (구현됨)
+    - [x] 아이콘 크기 및 간격 반응형 확인 (구현됨)
+  - [x] `components/layout/Header.tsx` 검증
+    - [x] Mobile (< 768px): `md:hidden` 확인, 60px 높이 확인 (구현됨)
+    - [x] Tablet/Desktop: 숨김 확인 (구현됨)
+    - [x] 아이콘 크기 및 간격 확인 (구현됨)
+  - [x] `components/layout/BottomNav.tsx` 검증
+    - [x] Mobile (< 768px): `md:hidden` 확인, 50px 높이 확인 (구현됨)
+    - [x] Tablet/Desktop: 숨김 확인 (구현됨)
+    - [x] 5개 아이콘 균등 분배 확인 (구현됨)
+  - [x] `app/(main)/layout.tsx` 검증
+    - [x] Mobile: `mt-[60px]`, `mb-[50px]` 확인 (구현됨)
+    - [x] Tablet: `md:ml-[72px]`, `md:mb-0` 확인 (구현됨)
+    - [x] Desktop: `lg:ml-[244px]` 확인 (구현됨)
+    - [x] Main content 최대 너비 630px 중앙 정렬 확인 (구현됨)
+
+- [x] PostCard 반응형 검증
+
+  - [x] `components/post/PostCard.tsx` 검증
+    - [x] 이미지 영역 1:1 비율 유지 (`aspect-square`) (구현됨)
+    - [x] Mobile: 전체 너비 사용 (구현됨, layout에서 제어)
+    - [x] Tablet/Desktop: 최대 630px 제한 확인 (구현됨, layout에서 제어)
+    - [x] 텍스트 크기 반응형 확인 (text-instagram-sm, text-instagram-xs) (구현됨)
+  - [x] PostModal 반응형 검증
+    - [x] Desktop: 이미지 50% + 댓글 50% 레이아웃 (구현됨, `md:w-1/2`)
+    - [x] Mobile: 세로 레이아웃 (전체 페이지) (구현됨, `md:hidden`)
+    - [x] 이전/다음 버튼 Desktop만 표시 확인 (구현됨, `hidden md:flex`)
+
+- [x] 프로필 페이지 반응형 검증
+
+  - [x] `components/profile/ProfileHeader.tsx` 검증
+    - [x] Desktop: 가로 레이아웃 (프로필 이미지 150px + 정보) (구현됨, `hidden md:flex`)
+    - [x] Mobile: 세로 레이아웃 (프로필 이미지 90px 상단, 정보 하단) (구현됨, `md:hidden`)
+    - [x] 통계 표시 반응형 확인 (구현됨)
+  - [x] `components/profile/PostGrid.tsx` 검증
+    - [x] 3열 그리드 모든 화면 크기에서 유지 (구현됨, `grid-cols-3`)
+    - [x] Gap 반응형 (Mobile: gap-1, Desktop: gap-4) (구현됨, `gap-1 md:gap-4`)
+    - [x] Hover 효과 Desktop/Tablet만 표시 확인 (구현됨, `hidden md:flex`)
+
+- [x] CreatePostModal 반응형 검증
+  - [x] `components/post/CreatePostModal.tsx` 검증
+    - [x] 모달 크기 반응형 (Mobile: 전체 너비, Desktop: 최대 500px) (구현됨, shadcn/ui Dialog 기본)
+    - [x] 이미지 미리보기 비율 유지 (구현됨, `aspect-square`)
+    - [x] 입력 필드 반응형 확인 (구현됨)
+
+### 11.2. 좋아요 애니메이션 개선
+
+- [x] `components/post/LikeButton.tsx` 애니메이션 검증 및 개선
+
+  - [x] 클릭 애니메이션 검증
+    - [x] `scale-[1.3]` 클래스 적용 확인 (구현됨)
+    - [x] `duration-150` (0.15초) 확인 (구현됨)
+    - [x] 애니메이션 후 원래 크기로 복귀 확인 (구현됨, `transition-transform`)
+    - [x] `transition-transform` 적용 확인 (구현됨)
+  - [x] 더블탭 큰 하트 애니메이션 검증
+    - [x] `fadeInOut` 애니메이션 적용 확인 (1초) (구현됨, `animate-[fadeInOut_1s_ease-in-out]`)
+    - [x] 큰 하트 크기 확인 (sm: 48px, md: 64px, lg: 80px) (구현됨)
+    - [x] 중앙 정렬 확인 (`translate(-50%, -50%)`) (구현됨)
+    - [x] `pointer-events-none` 적용 확인 (클릭 방해 방지) (구현됨)
+  - [ ] 애니메이션 성능 최적화
+    - [ ] `will-change` 속성 추가 (필요시, 성능 테스트 후 결정)
+    - [x] GPU 가속 확인 (`transform`, `opacity` 사용) (구현됨)
+
+- [x] PostCard 이미지 더블탭 좋아요 검증
+
+  - [x] 투명 오버레이로 더블탭 감지 확인 (구현됨, `opacity-0` 오버레이)
+  - [x] `LikeButton` 컴포넌트 재사용 확인 (구현됨)
+  - [x] 큰 하트 애니메이션 표시 확인 (구현됨)
+
+- [x] PostModal 이미지 더블탭 좋아요 검증
+  - [x] 모달 내 이미지 영역 더블탭 감지 확인 (구현됨, `handleTouchStart`)
+  - [x] 큰 하트 애니메이션 표시 확인 (구현됨, `showBigHeart` 상태)
+
+### 11.3. 로딩 상태 및 Skeleton UI 개선
+
+- [x] `components/post/PostCardSkeleton.tsx` 검증 및 개선
+
+  - [x] Shimmer 효과 적용 확인
+    - [x] Tailwind 애니메이션 사용 (구현됨, `animate-[shimmer_2s_infinite]`)
+    - [x] `@keyframes shimmer` 정의 확인 (globals.css) (구현됨)
+    - [x] 무한 반복 애니메이션 확인 (구현됨, `infinite`)
+  - [x] Skeleton 구조 검증
+    - [x] 헤더 영역 (프로필 이미지, 사용자명, 시간) (구현됨)
+    - [x] 이미지 영역 (정사각형) (구현됨, `aspect-square`)
+    - [x] 액션 버튼 영역 (구현됨)
+    - [x] 좋아요 수 영역 (구현됨)
+    - [x] 캡션 영역 (구현됨)
+    - [x] 댓글 미리보기 영역 (구현됨)
+  - [x] 반응형 Skeleton 크기 확인
+    - [x] Mobile: 전체 너비 (구현됨, layout에서 제어)
+    - [x] Desktop: 최대 630px (구현됨, layout에서 제어)
+
+- [x] PostFeed 로딩 상태 개선
+
+  - [x] `components/post/PostFeed.tsx` 검증
+    - [x] 로딩 중 `PostCardSkeleton` 표시 확인 (구현됨)
+    - [x] 여러 개의 Skeleton 표시 (2개 이상) (구현됨, 2개 표시)
+    - [x] Intersection Observer 타겟 영역 확인 (구현됨)
+
+- [ ] 기타 로딩 상태 추가 (선택사항)
+  - [ ] 프로필 페이지 로딩 Skeleton
+  - [ ] 댓글 목록 로딩 Skeleton
+  - [ ] 이미지 업로드 진행률 표시
+
+### 11.4. Hover 효과 및 Transition 개선
+
+- [x] Sidebar Hover 효과 검증
+
+  - [x] `components/layout/Sidebar.tsx` 검증
+    - [x] 메뉴 항목 hover 시 배경색 변경 (`hover:bg-[var(--instagram-background)]`) (구현됨)
+    - [x] 아이콘 hover 시 scale 효과 (`group-hover:scale-105`) (구현됨)
+    - [x] Active 상태 스타일 확인 (볼드, scale-110) (구현됨)
+    - [x] Transition 적용 확인 (`transition-colors`, `transition-transform`) (구현됨)
+
+- [x] BottomNav Hover 효과 검증
+
+  - [x] `components/layout/BottomNav.tsx` 검증
+    - [x] 아이콘 hover 시 배경색 변경 (구현됨, `hover:bg-[var(--instagram-background)]`)
+    - [x] Active 상태 스타일 확인 (구현됨, `scale-110`)
+    - [x] Transition 적용 확인 (구현됨, `transition-colors`, `transition-transform`)
+
+- [x] PostCard Hover 효과 검증
+
+  - [x] 버튼 hover 효과 확인
+    - [x] 좋아요, 댓글, 공유, 북마크 버튼 hover 시 scale 효과 (구현됨, `hover:scale-110`)
+    - [x] `transition-transform hover:scale-110` 적용 확인 (구현됨)
+  - [x] 링크 hover 효과 확인
+    - [x] 사용자명 링크 hover 시 opacity 변경 (구현됨, `hover:opacity-70`)
+    - [x] `hover:opacity-70` 적용 확인 (구현됨)
+
+- [x] PostGrid Hover 효과 검증
+
+  - [x] `components/profile/PostGrid.tsx` 검증
+    - [x] Desktop/Tablet hover 시 오버레이 표시 (구현됨, `hidden md:flex`)
+    - [x] 좋아요/댓글 수 표시 (구현됨)
+    - [x] 반투명 검은 배경 (`bg-black/40`) (구현됨)
+    - [x] Mobile에서는 hover 효과 없음 확인 (구현됨, `hidden md:flex`)
+
+- [x] 버튼 Transition 개선
+  - [x] 모든 버튼에 transition 적용 확인 (구현됨)
+  - [x] 일관된 transition duration 사용 (150ms, 200ms) (구현됨)
+  - [x] Hover 시 부드러운 색상 전환 확인 (구현됨)
+
+### 11.5. 모달 및 Dialog 애니메이션
+
+- [x] PostModal 애니메이션 검증
+
+  - [x] 모달 열기/닫기 애니메이션 확인 (shadcn/ui Dialog 기본) (구현됨)
+  - [x] 배경 오버레이 fade in/out 확인 (구현됨, shadcn/ui 기본)
+  - [x] 모달 내용 scale/fade 애니메이션 확인 (구현됨, shadcn/ui 기본)
+
+- [x] CreatePostModal 애니메이션 검증
+
+  - [x] 모달 열기/닫기 애니메이션 확인 (구현됨, shadcn/ui Dialog 기본)
+  - [ ] 이미지 미리보기 fade in 애니메이션 (선택사항, 현재 즉시 표시)
+  - [ ] 업로드 진행률 애니메이션 (선택사항, 현재 로딩 스피너만 표시)
+
+- [x] AlertDialog 애니메이션 검증
+  - [x] 삭제 확인 다이얼로그 애니메이션 확인 (구현됨, shadcn/ui 기본)
+  - [x] 배경 오버레이 및 다이얼로그 내용 애니메이션 확인 (구현됨, shadcn/ui 기본)
+
+### 11.6. 무한 스크롤 최적화
+
+- [x] PostFeed 무한 스크롤 검증
+  - [x] `components/post/PostFeed.tsx` 검증
+    - [x] Intersection Observer 설정 확인 (구현됨)
+    - [x] Threshold 값 확인 (0.1) (구현됨)
+    - [x] 로딩 중 중복 요청 방지 확인 (구현됨, `loading` 상태 체크)
+    - [x] 마지막 게시물 도달 시 더 이상 로드하지 않음 확인 (구현됨, `hasMore` 상태)
+  - [ ] 성능 최적화
+    - [x] Intersection Observer cleanup 확인 (구현됨, `useEffect` return)
+    - [x] 메모리 누수 방지 확인 (구현됨, cleanup 함수)
+    - [ ] 스크롤 성능 확인 (requestAnimationFrame 사용 여부, 현재는 기본 Intersection Observer 사용)
+
+### 11.7. 터치 인터랙션 개선 (모바일)
+
+- [x] 터치 제스처 검증
+
+  - [x] 이미지 더블탭 좋아요 동작 확인 (구현됨, `handleTouchStart`)
+  - [x] 탭 간격 300ms 이내 확인 (구현됨, `tapLength < 300`)
+  - [x] 단일 탭과 더블탭 구분 확인 (구현됨, `lastTapRef` 사용)
+  - [ ] 터치 영역 최소 44px 확인 (접근성, 버튼 크기 검증 필요)
+
+- [ ] 모바일 스크롤 최적화
+  - [ ] 스크롤 부드러움 확인 (`-webkit-overflow-scrolling: touch`, CSS 추가 필요)
+  - [ ] 스크롤 성능 확인 (실제 테스트 필요)
+  - [ ] Pull-to-refresh 방지 (필요시, CSS 추가)
+
+### 11.8. 반응형 테스트 및 검증
+
+- [ ] 다양한 화면 크기 테스트
+
+  - [ ] Mobile: 320px, 375px, 414px
+  - [ ] Tablet: 768px, 834px, 1024px
+  - [ ] Desktop: 1280px, 1440px, 1920px
+  - [ ] 각 브레이크포인트에서 레이아웃 확인
+  - [ ] 실제 디바이스 테스트 (선택사항)
+
+- [ ] 브라우저 호환성 테스트
+
+  - [ ] Chrome, Firefox, Safari, Edge
+  - [ ] 모바일 브라우저 (iOS Safari, Chrome Mobile)
+  - [ ] 애니메이션 성능 확인 (60fps 목표)
+
+- [ ] 접근성 검증
+  - [ ] 키보드 네비게이션 확인 (Tab, Enter, Escape)
+  - [ ] 스크린 리더 호환성 확인 (ARIA 레이블)
+  - [ ] 애니메이션 감소 설정 지원 (`prefers-reduced-motion` 미디어 쿼리)
+
+### 11.9. CSS 애니메이션 유틸리티 클래스 추가
+
+- [x] `app/globals.css`에 애니메이션 유틸리티 추가
+
+  - [x] `@keyframes fadeInOut` 정의 확인 (이미 존재) (구현됨)
+  - [x] `@keyframes shimmer` 정의 확인 (이미 존재) (구현됨)
+  - [ ] 추가 애니메이션 클래스 (필요시)
+    - [ ] `animate-scale-in` (모달 열기, shadcn/ui Dialog 기본 사용)
+    - [ ] `animate-fade-in` (요소 등장, 필요시 추가)
+    - [ ] `animate-slide-up` (요소 슬라이드, 필요시 추가)
+
+- [x] Tailwind 애니메이션 설정 확인
+  - [x] `tw-animate-css` import 확인 (구현됨)
+  - [x] 커스텀 애니메이션 등록 확인 (구현됨, `@keyframes` 사용)
+
+### 11.10. 성능 최적화
+
+- [x] 애니메이션 성능 최적화
+
+  - [ ] `will-change` 속성 적절히 사용 (성능 테스트 후 결정)
+  - [x] GPU 가속 활용 (`transform`, `opacity`) (구현됨)
+  - [x] 불필요한 리플로우 방지 (구현됨, `transform` 사용)
+  - [ ] 애니메이션 프레임 드롭 확인 (실제 테스트 필요)
+
+- [x] 반응형 이미지 최적화
+
+  - [x] Next.js Image 컴포넌트 `sizes` prop 확인 (구현됨)
+  - [x] 적절한 이미지 크기 로드 확인 (구현됨)
+  - [x] Lazy loading 확인 (구현됨, Next.js Image 기본)
+
+- [ ] 코드 스플리팅 확인
+  - [ ] 모바일/데스크톱별 코드 분리 (필요시, 현재는 CSS로 처리)
+  - [ ] 동적 import 활용 (필요시, 현재는 정적 import)
 
 ## 12. 에러 핸들링 및 최적화
 
