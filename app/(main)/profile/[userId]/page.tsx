@@ -205,16 +205,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const isFollowing = await getFollowStatus(currentUserId, userId);
 
   return (
-    <div className="w-full">
-      <ProfileHeader
-        user={user}
-        isOwnProfile={isOwnProfile}
-        initialIsFollowing={isFollowing}
-      />
-      <div className="mt-8">
-        <PostGrid posts={posts} />
-      </div>
-    </div>
+    <ProfilePageClient
+      user={user}
+      isOwnProfile={isOwnProfile}
+      initialIsFollowing={isFollowing}
+      initialPosts={posts}
+    />
   );
 }
 

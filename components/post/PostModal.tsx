@@ -15,7 +15,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark, Heart } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark, Heart, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useUser } from "@clerk/nextjs";
@@ -23,6 +23,22 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { PostWithStatsAndUser } from "@/lib/types";
 import { LikeButton } from "./LikeButton";
 import { CommentList } from "@/components/comment/CommentList";
@@ -36,6 +52,7 @@ interface PostModalProps {
   onClose: () => void;
   initialPost?: PostWithStatsAndUser;
   allPosts?: PostWithStatsAndUser[]; // 이전/다음 게시물 네비게이션용
+  onPostDeleted?: (postId: string) => void; // 게시물 삭제 콜백
 }
 
 export function PostModal({
@@ -44,10 +61,13 @@ export function PostModal({
   onClose,
   initialPost,
   allPosts = [],
+  onPostDeleted,
 }: PostModalProps) {
   const [post, setPost] = useState<PostWithStatsAndUser | null>(initialPost || null);
   const [loading, setLoading] = useState(!initialPost);
   const [isLiked, setIsLiked] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [showBigHeart, setShowBigHeart] = useState(false);
   const { user } = useUser();
@@ -211,6 +231,33 @@ export function PostModal({
     locale: ko,
   });
 
+  // 게시물 삭제 핸들러
+  const handleDelete = async () => {
+    if (!isOwnPost || !post || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "게시물 삭제에 실패했습니다.");
+      }
+
+      // 삭제 성공 시 모달 닫기 및 부모 컴포넌트에 알림
+      onPostDeleted?.(post.id);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      alert(error instanceof Error ? error.message : "게시물 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full h-[90vh] p-0 overflow-hidden flex flex-col md:flex-row">
@@ -288,12 +335,35 @@ export function PostModal({
                 </Link>
               </div>
             </div>
-            <button
-              className="p-1 hover:opacity-70 transition-opacity"
-              aria-label="더보기"
-            >
-              <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
-            </button>
+            {isOwnPost ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1 hover:opacity-70 transition-opacity"
+                    aria-label="더보기"
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    삭제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <button
+                className="p-1 hover:opacity-70 transition-opacity opacity-0"
+                aria-label="더보기"
+                disabled
+              >
+                <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
+              </button>
+            )}
           </header>
 
           {/* 댓글 목록 (스크롤 가능) */}
@@ -403,12 +473,35 @@ export function PostModal({
                 {post.user.name}
               </Link>
             </div>
-            <button
-              className="p-1 hover:opacity-70 transition-opacity"
-              aria-label="더보기"
-            >
-              <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
-            </button>
+            {isOwnPost ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1 hover:opacity-70 transition-opacity"
+                    aria-label="더보기"
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    삭제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <button
+                className="p-1 hover:opacity-70 transition-opacity opacity-0"
+                aria-label="더보기"
+                disabled
+              >
+                <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
+              </button>
+            )}
           </header>
 
           {/* 게시물 내용 */}
@@ -497,6 +590,28 @@ export function PostModal({
             />
           </div>
         </div>
+
+        {/* 삭제 확인 다이얼로그 */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>게시물 삭제</AlertDialogTitle>
+              <AlertDialogDescription>
+                정말 이 게시물을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

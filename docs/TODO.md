@@ -477,14 +477,119 @@
 
 ## 10. 게시물 삭제
 
-- [ ] `app/api/posts/[postId]/route.ts`
-  - [ ] DELETE: 게시물 삭제
-  - [ ] 본인만 삭제 가능 (인증 검증)
-  - [ ] Supabase Storage에서 이미지 삭제
-- [ ] PostCard ⋯ 메뉴
-  - [ ] 본인 게시물만 삭제 옵션 표시
-  - [ ] 삭제 확인 다이얼로그
-  - [ ] 삭제 후 피드에서 제거
+### 10.1. API 엔드포인트
+
+- [x] `app/api/posts/[postId]/route.ts` 파일 생성
+  - [x] DELETE: 게시물 삭제
+    - [x] 인증 검증 (Clerk `auth()`)
+    - [x] `postId` 파라미터 파싱
+    - [x] Clerk User ID로 Supabase User ID 조회
+    - [x] 게시물 소유자 확인 (`posts.user_id`와 현재 사용자 ID 비교)
+    - [x] 본인 게시물만 삭제 가능 (403 에러 처리)
+    - [x] 게시물 이미지 URL에서 Storage 경로 추출
+      - [x] `extractStoragePath` 함수로 URL에서 경로 파싱
+      - [x] `/storage/v1/object/public/posts/{path}` 형식에서 경로 추출
+    - [x] Supabase Storage에서 이미지 삭제
+      - [x] `posts` 버킷에서 파일 삭제
+      - [x] Service Role 클라이언트 사용 (RLS 우회)
+      - [x] Storage 삭제 실패 시 경고만 표시하고 DB 삭제는 진행
+    - [x] `posts` 테이블에서 게시물 삭제
+      - [x] CASCADE로 인해 `likes`, `comments`도 자동 삭제됨
+    - [x] 성공 시 200 응답 반환
+  - [x] 에러 처리
+    - [x] 인증되지 않은 사용자: 401 에러
+    - [x] 게시물을 찾을 수 없음: 404 에러
+    - [x] 본인 게시물이 아님: 403 에러
+    - [x] Storage 삭제 실패: 경고만 표시 (DB 삭제는 진행)
+    - [x] 기타 에러: 500 에러
+
+### 10.2. PostCard ⋯ 메뉴 구현
+
+- [x] `components/post/PostCard.tsx` 수정
+  - [x] ⋯ 메뉴 버튼 클릭 이벤트 추가
+  - [x] shadcn/ui DropdownMenu 사용
+  - [x] 본인 게시물 확인
+    - [x] `useUser()` 훅으로 현재 사용자 ID 가져오기
+    - [x] `post.user.clerk_id`와 비교
+  - [x] 본인 게시물인 경우에만 "삭제" 옵션 표시
+  - [x] 삭제 옵션 클릭 시 확인 다이얼로그 표시
+    - [x] shadcn/ui AlertDialog 사용
+    - [x] "정말 삭제하시겠습니까?" 메시지
+    - [x] "취소" 및 "삭제" 버튼
+  - [x] 삭제 확인 후 API 호출
+    - [x] `/api/posts/[postId]` DELETE 요청
+    - [x] 성공 시 `onPostDeleted` 콜백 호출
+    - [x] 실패 시 에러 메시지 표시 (alert)
+  - [x] 삭제 후 UI 업데이트
+    - [x] `onPostDeleted` 콜백 prop 추가
+    - [x] 로딩 상태 관리 (`isDeleting`)
+
+### 10.3. PostFeed에서 삭제된 게시물 제거
+
+- [x] `components/post/PostFeed.tsx` 수정
+  - [x] 게시물 삭제 핸들러 추가
+    - [x] `handlePostDelete(postId: string)` 함수
+    - [x] `posts` 상태에서 해당 게시물 제거
+    - [x] Optimistic UI 업데이트
+  - [x] PostCard에 `onPostDeleted` prop 전달
+    - [x] 삭제 성공 시 `handlePostDelete` 호출
+  - [x] PostModal에도 `onPostDeleted` prop 전달
+    - [x] 삭제 성공 시 모달 닫기 및 게시물 제거
+
+### 10.4. PostModal에서 삭제 기능 지원
+
+- [x] `components/post/PostModal.tsx` 수정
+  - [x] 헤더의 ⋯ 메뉴 버튼 활성화
+  - [x] 본인 게시물 확인 (`isOwnPost`)
+  - [x] 본인 게시물인 경우에만 "삭제" 옵션 표시 (DropdownMenu)
+  - [x] 삭제 확인 다이얼로그 (PostCard와 동일, AlertDialog)
+  - [x] 삭제 성공 시
+    - [x] 모달 닫기 (`onClose` 호출)
+    - [x] 부모 컴포넌트에 삭제 알림 (`onPostDeleted` 콜백)
+  - [x] `onPostDeleted` prop 추가
+  - [x] Desktop 및 Mobile 레이아웃 모두에 적용
+
+### 10.5. 프로필 페이지에서 삭제된 게시물 제거
+
+- [x] `components/profile/PostGrid.tsx` 수정
+  - [x] 게시물 삭제 핸들러 추가
+    - [x] `onPostDeleted` prop 추가
+    - [x] `currentPosts` 상태로 게시물 관리
+    - [x] 삭제된 게시물을 그리드에서 제거
+    - [x] `useEffect`로 `posts` prop 변경 시 상태 업데이트
+  - [x] PostModal에 `onPostDeleted` prop 전달
+    - [x] 삭제 성공 시 모달 닫기 및 게시물 제거
+- [x] `app/(main)/profile/[userId]/page.tsx` 수정
+  - [x] `ProfilePageClient` 컴포넌트 생성
+    - [x] 게시물 삭제 핸들러 추가
+    - [x] `posts` 상태에서 해당 게시물 제거
+    - [x] 통계 업데이트 (`posts_count` 감소)
+    - [x] ProfileHeader와 PostGrid 간 상태 공유
+  - [x] Server Component에서 Client Component로 전환
+    - [x] 초기 데이터는 Server Component에서 로드
+    - [x] 클라이언트 상태 관리는 ProfilePageClient에서 처리
+
+### 10.6. 이미지 URL에서 Storage 경로 추출 로직
+
+- [x] Storage 경로 파싱 함수 생성
+  - [x] `app/api/posts/[postId]/route.ts`에 `extractStoragePath` 함수 추가
+  - [x] `image_url`에서 Storage 경로 추출
+    - [x] URL 형식: `https://[project].supabase.co/storage/v1/object/public/posts/{clerk_id}/{filename}`
+    - [x] 경로 추출: `/storage/v1/object/public/posts/` 이후 부분
+    - [x] 정규식으로 경로 파싱
+  - [x] 경로 추출 실패 시 경고만 표시하고 DB 삭제는 진행
+
+### 10.7. 에러 처리 및 UX 개선
+
+- [x] 에러 처리
+  - [x] 네트워크 에러 처리 (try-catch)
+  - [x] API 에러 메시지 표시 (alert 사용)
+  - [x] Storage 삭제 실패 시 경고만 표시 (DB 삭제는 성공)
+- [x] UX 개선
+  - [x] 삭제 확인 다이얼로그 (실수 방지, AlertDialog)
+  - [x] 삭제 중 로딩 상태 표시 (`isDeleting` 상태, 버튼 비활성화)
+  - [x] 삭제 성공 시 피드에서 즉시 제거 (Optimistic UI)
+  - [x] 삭제 실패 시 에러 메시지 표시 (alert)
 
 ## 11. 반응형 및 애니메이션
 

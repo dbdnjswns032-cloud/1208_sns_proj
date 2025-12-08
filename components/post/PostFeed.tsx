@@ -30,6 +30,11 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  // 게시물 삭제 핸들러
+  const handlePostDelete = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
   const fetchPosts = async (currentOffset: number) => {
     if (loading || !hasMore) return;
 
@@ -108,6 +113,7 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
               key={post.id}
               post={post}
               onImageClick={handleImageClick}
+              onPostDeleted={handlePostDelete}
             />
           ))}
         </>
@@ -138,6 +144,10 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
           onClose={handleCloseModal}
           initialPost={modalPost}
           allPosts={posts}
+          onPostDeleted={(deletedPostId) => {
+            handlePostDelete(deletedPostId);
+            handleCloseModal();
+          }}
         />
       )}
     </div>

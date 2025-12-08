@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Heart, MessageCircle } from "lucide-react";
 import type { PostWithStatsAndUser } from "@/lib/types";
@@ -21,11 +21,18 @@ import { cn } from "@/lib/utils";
 interface PostGridProps {
   posts: PostWithStatsAndUser[];
   onPostClick?: (postId: string) => void;
+  onPostDeleted?: (postId: string) => void; // 게시물 삭제 콜백
 }
 
-export function PostGrid({ posts, onPostClick }: PostGridProps) {
+export function PostGrid({ posts, onPostClick, onPostDeleted }: PostGridProps) {
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
+  const [currentPosts, setCurrentPosts] = useState(posts);
+
+  // posts prop이 변경되면 상태 업데이트
+  useEffect(() => {
+    setCurrentPosts(posts);
+  }, [posts]);
 
   const handlePostClick = (postId: string) => {
     setModalPostId(postId);
@@ -36,12 +43,19 @@ export function PostGrid({ posts, onPostClick }: PostGridProps) {
     setModalPostId(null);
   };
 
+  // 게시물 삭제 핸들러
+  const handlePostDelete = (postId: string) => {
+    setCurrentPosts((prev) => prev.filter((p) => p.id !== postId));
+    onPostDeleted?.(postId);
+    handleCloseModal();
+  };
+
   // 모달에 표시할 게시물 찾기
   const modalPost = modalPostId
-    ? posts.find((p) => p.id === modalPostId)
+    ? currentPosts.find((p) => p.id === modalPostId)
     : undefined;
 
-  if (posts.length === 0) {
+  if (currentPosts.length === 0) {
     return (
       <div className="w-full py-12 text-center">
         <p className="text-instagram-base text-[var(--instagram-text-secondary)]">
@@ -54,7 +68,7 @@ export function PostGrid({ posts, onPostClick }: PostGridProps) {
   return (
     <>
       <div className="grid grid-cols-3 gap-1 md:gap-4 w-full">
-        {posts.map((post) => (
+        {currentPosts.map((post) => (
           <div
             key={post.id}
             className="relative aspect-square bg-[var(--instagram-background)] cursor-pointer group"
@@ -97,7 +111,8 @@ export function PostGrid({ posts, onPostClick }: PostGridProps) {
           isOpen={!!modalPostId}
           onClose={handleCloseModal}
           initialPost={modalPost}
-          allPosts={posts}
+          allPosts={currentPosts}
+          onPostDeleted={handlePostDelete}
         />
       )}
     </>

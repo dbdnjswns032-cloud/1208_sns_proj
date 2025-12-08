@@ -16,7 +16,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MoreHorizontal, MessageCircle, Send, Bookmark } from "lucide-react";
+import { MoreHorizontal, MessageCircle, Send, Bookmark, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useUser } from "@clerk/nextjs";
@@ -25,18 +25,40 @@ import { LikeButton } from "./LikeButton";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 import { CommentList } from "@/components/comment/CommentList";
 import { CommentForm } from "@/components/comment/CommentForm";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PostCardProps {
   post: PostWithStatsAndUser;
   onImageClick?: (postId: string) => void;
+  onPostDeleted?: (postId: string) => void;
 }
 
-export function PostCard({ post, onImageClick }: PostCardProps) {
+export function PostCard({ post, onImageClick, onPostDeleted }: PostCardProps) {
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { user } = useUser();
   const supabase = useClerkSupabaseClient();
+
+  // 본인 게시물인지 확인
+  const isOwnPost = user?.id === post.user.clerk_id;
 
   // 초기 좋아요 상태 확인
   useEffect(() => {
@@ -94,6 +116,32 @@ export function PostCard({ post, onImageClick }: PostCardProps) {
     locale: ko,
   });
 
+  // 게시물 삭제 핸들러
+  const handleDelete = async () => {
+    if (!isOwnPost || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "게시물 삭제에 실패했습니다.");
+      }
+
+      // 삭제 성공 시 부모 컴포넌트에 알림
+      onPostDeleted?.(post.id);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      alert(error instanceof Error ? error.message : "게시물 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <article className="bg-[var(--instagram-card-background)] border border-[var(--instagram-border)] rounded-lg mb-6">
       {/* 헤더 */}
@@ -121,12 +169,35 @@ export function PostCard({ post, onImageClick }: PostCardProps) {
         </div>
 
         {/* ⋯ 메뉴 */}
-        <button
-          className="p-1 hover:opacity-70 transition-opacity"
-          aria-label="더보기"
-        >
-          <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
-        </button>
+        {isOwnPost ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1 hover:opacity-70 transition-opacity"
+                aria-label="더보기"
+              >
+                <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)]" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <button
+            className="p-1 hover:opacity-70 transition-opacity"
+            aria-label="더보기"
+            disabled
+          >
+            <MoreHorizontal className="w-5 h-5 text-[var(--instagram-text-primary)] opacity-0" />
+          </button>
+        )}
       </header>
 
       {/* 이미지 영역 (1:1 정사각형) - 더블탭 좋아요 지원 */}
@@ -261,6 +332,28 @@ export function PostCard({ post, onImageClick }: PostCardProps) {
           // 필요시 여기서 댓글 수를 증가시킬 수 있음
         }}
       />
+
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>게시물 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말 이 게시물을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }

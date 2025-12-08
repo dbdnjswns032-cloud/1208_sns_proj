@@ -42,6 +42,10 @@ export function ProfileHeader({
     setFollowersCount((prev) => (newIsFollowing ? prev + 1 : prev - 1));
   };
 
+  // 게시물 삭제 시 통계 업데이트 (외부에서 호출 가능하도록)
+  // onPostDeleted는 함수가 아니라 트리거 역할
+  // 실제로는 PostGrid에서 삭제 시 ProfilePageClient를 통해 상태가 업데이트됨
+
   return (
     <div className="w-full">
       {/* Desktop: 가로 레이아웃 */}
