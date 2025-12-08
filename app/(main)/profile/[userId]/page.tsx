@@ -60,6 +60,55 @@ async function getUserData(userId: string): Promise<UserWithStats | null> {
   }
 }
 
+async function getFollowStatus(
+  currentUserId: string | null,
+  profileUserId: string
+): Promise<boolean> {
+  // 본인 프로필이거나 로그인하지 않은 경우 false 반환
+  if (!currentUserId || currentUserId === profileUserId) {
+    return false;
+  }
+
+  try {
+    const supabase = createClerkSupabaseClient();
+
+    // 현재 사용자의 Supabase User ID 조회
+    const { data: currentUserData } = await supabase
+      .from("users")
+      .select("id")
+      .eq("clerk_id", currentUserId)
+      .single();
+
+    if (!currentUserData) {
+      return false;
+    }
+
+    // 프로필 사용자의 Supabase User ID 조회
+    const { data: profileUserData } = await supabase
+      .from("users")
+      .select("id")
+      .eq("clerk_id", profileUserId)
+      .single();
+
+    if (!profileUserData) {
+      return false;
+    }
+
+    // 팔로우 관계 확인
+    const { data: followData } = await supabase
+      .from("follows")
+      .select("id")
+      .eq("follower_id", currentUserData.id)
+      .eq("following_id", profileUserData.id)
+      .single();
+
+    return !!followData;
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    return false;
+  }
+}
+
 async function getUserPosts(userId: string): Promise<PostWithStatsAndUser[]> {
   try {
     const supabase = createClerkSupabaseClient();
@@ -152,9 +201,16 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // 본인 프로필 여부 확인
   const isOwnProfile = currentUserId === userId;
 
+  // 팔로우 상태 확인
+  const isFollowing = await getFollowStatus(currentUserId, userId);
+
   return (
     <div className="w-full">
-      <ProfileHeader user={user} isOwnProfile={isOwnProfile} />
+      <ProfileHeader
+        user={user}
+        isOwnProfile={isOwnProfile}
+        initialIsFollowing={isFollowing}
+      />
       <div className="mt-8">
         <PostGrid posts={posts} />
       </div>

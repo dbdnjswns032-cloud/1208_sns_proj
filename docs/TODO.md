@@ -361,19 +361,119 @@
 
 ## 9. 팔로우 기능
 
-- [ ] `app/api/follows/route.ts`
-  - [ ] POST: 팔로우 추가
-  - [ ] DELETE: 팔로우 제거
-  - [ ] 인증 검증 (Clerk)
-  - [ ] 자기 자신 팔로우 방지
-- [ ] `components/profile/FollowButton.tsx`
-  - [ ] "팔로우" 버튼 (파란색, 미팔로우 상태)
-  - [ ] "팔로잉" 버튼 (회색, 팔로우 중 상태)
-  - [ ] Hover 시 "언팔로우" (빨간 테두리)
-  - [ ] 클릭 시 즉시 API 호출 및 UI 업데이트
-- [ ] ProfileHeader에 FollowButton 통합
-  - [ ] 팔로우 상태 관리
-  - [ ] 통계 실시간 업데이트
+### 9.1. API 엔드포인트
+
+- [x] `app/api/follows/route.ts` 파일 생성
+  - [x] POST: 팔로우 추가
+    - [x] 인증 검증 (Clerk `auth()`)
+    - [x] 요청 본문에서 `followingId` (clerk_id) 파싱
+    - [x] Clerk User ID로 Supabase User ID 조회
+    - [x] `followingId`로 대상 사용자의 Supabase User ID 조회
+    - [x] 자기 자신 팔로우 방지 (`follower_id !== following_id`)
+    - [x] 중복 팔로우 방지 (UNIQUE 제약 조건 확인)
+    - [x] `follows` 테이블에 팔로우 관계 추가
+    - [x] 성공 시 201 응답 반환
+  - [x] DELETE: 팔로우 제거
+    - [x] 인증 검증 (Clerk `auth()`)
+    - [x] 쿼리 파라미터에서 `followingId` (clerk_id) 파싱
+    - [x] Clerk User ID로 Supabase User ID 조회
+    - [x] `followingId`로 대상 사용자의 Supabase User ID 조회
+    - [x] `follows` 테이블에서 팔로우 관계 삭제
+    - [x] 성공 시 200 응답 반환
+  - [x] 에러 처리
+    - [x] 인증되지 않은 사용자: 401 에러
+    - [x] 사용자를 찾을 수 없음: 404 에러
+    - [x] 자기 자신 팔로우 시도: 400 에러
+    - [x] 중복 팔로우: 409 에러
+    - [x] 기타 에러: 500 에러
+
+### 9.2. FollowButton 컴포넌트
+
+- [x] `components/profile/FollowButton.tsx` 파일 생성
+  - [x] Props 인터페이스 정의
+    - [x] `followingId: string` (필수, 팔로우할 사용자의 clerk_id)
+    - [x] `initialIsFollowing: boolean` (필수, 초기 팔로우 상태)
+    - [x] `onFollowChange?: (isFollowing: boolean) => void` (선택, 팔로우 상태 변경 콜백)
+    - [x] `className?: string` (선택, 추가 스타일)
+  - [x] 상태 관리
+    - [x] `isFollowing` 상태 (초기값: `initialIsFollowing`)
+    - [x] `isLoading` 상태 (API 호출 중)
+    - [x] `isHovering` 상태 (hover 효과용)
+    - [x] `useEffect`로 `initialIsFollowing` 변경 시 상태 업데이트
+  - [x] 버튼 스타일
+    - [x] 미팔로우 상태: "팔로우" 버튼
+      - [x] 파란색 배경 (`bg-[var(--instagram-blue)]`)
+      - [x] 흰색 텍스트
+      - [x] hover 시 더 진한 파란색
+    - [x] 팔로우 중 상태: "팔로잉" 버튼
+      - [x] 회색 배경 (`bg-[var(--instagram-card-background)]`)
+      - [x] 회색 테두리 (`border border-[var(--instagram-border)]`)
+      - [x] 검은색 텍스트
+      - [x] hover 시 빨간 테두리 및 빨간 텍스트 ("언팔로우")
+  - [x] 클릭 이벤트
+    - [x] 클릭 시 즉시 Optimistic UI 업데이트
+    - [x] API 호출 (POST 또는 DELETE)
+    - [x] 성공 시 상태 업데이트 및 `onFollowChange` 콜백 호출
+    - [x] 실패 시 UI 롤백 및 에러 메시지 표시
+  - [x] 로딩 상태
+    - [x] API 호출 중 버튼 비활성화
+    - [x] disabled 스타일 적용
+
+### 9.3. 프로필 페이지 팔로우 상태 확인
+
+- [x] `app/(main)/profile/[userId]/page.tsx` 수정
+  - [x] 팔로우 상태 확인 함수 추가 (`getFollowStatus`)
+    - [x] 현재 로그인한 사용자의 Clerk ID 가져오기
+    - [x] `follows` 테이블에서 팔로우 관계 조회
+    - [x] `follower_id` = 현재 사용자, `following_id` = 프로필 사용자
+    - [x] 팔로우 상태 반환 (boolean)
+  - [x] Server Component에서 초기 팔로우 상태 로드
+    - [x] 본인 프로필이 아닌 경우에만 확인
+    - [x] `initialIsFollowing` prop으로 ProfileHeader에 전달
+
+### 9.4. ProfileHeader 통합
+
+- [x] `components/profile/ProfileHeader.tsx` 수정
+  - [x] FollowButton 컴포넌트 import
+  - [x] 본인 프로필이 아닌 경우 FollowButton 표시
+  - [x] 팔로우 상태 관리
+    - [x] `initialIsFollowing` prop 받기
+    - [x] `useState`로 팔로우 상태 관리
+    - [x] `onFollowChange` 콜백으로 상태 업데이트
+  - [x] 통계 실시간 업데이트
+    - [x] 팔로우 추가 시: `followers_count` 증가 (Optimistic UI)
+    - [x] 팔로우 제거 시: `followers_count` 감소 (Optimistic UI)
+    - [x] `useState`로 팔로워 수 관리
+
+### 9.5. 팔로우 상태 관리 (클라이언트)
+
+- [x] 프로필 페이지 클라이언트 상태 관리
+  - [x] ProfileHeader를 Client Component로 유지
+  - [x] 팔로우 상태를 클라이언트에서 관리
+    - [x] 초기 상태는 Server Component에서 전달 (`initialIsFollowing`)
+    - [x] 팔로우/언팔로우 후 상태 업데이트
+  - [x] 통계 업데이트
+    - [x] 팔로우 추가: `followers_count++` (Optimistic UI)
+    - [x] 팔로우 제거: `followers_count--` (Optimistic UI)
+    - [x] `useState`로 팔로워 수 관리
+
+### 9.6. 에러 처리 및 UX 개선
+
+- [x] 에러 처리
+  - [x] 네트워크 에러 처리
+  - [x] API 에러 메시지 표시 (alert 사용)
+  - [x] Optimistic UI 실패 시 롤백
+- [x] UX 개선
+  - [x] 버튼 클릭 시 즉시 피드백 (Optimistic UI)
+  - [x] 중복 클릭 방지 (로딩 중 버튼 비활성화)
+  - [x] hover 효과 (팔로잉 버튼 hover 시 "언팔로우" 표시)
+
+### 9.7. 통계 업데이트 최적화
+
+- [x] `user_stats` 뷰 자동 업데이트
+  - [x] `follows` 테이블 변경 시 뷰가 자동으로 업데이트됨 (데이터베이스 뷰 특성)
+  - [x] 클라이언트에서 Optimistic UI로 즉시 반영
+  - [x] Optimistic UI만 사용 (더 빠른 UX)
 
 ## 10. 게시물 삭제
 

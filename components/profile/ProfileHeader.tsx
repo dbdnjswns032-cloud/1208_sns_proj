@@ -11,28 +11,36 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import type { UserWithStats } from "@/lib/types";
+import { FollowButton } from "./FollowButton";
 import { cn } from "@/lib/utils";
 
 interface ProfileHeaderProps {
   user: UserWithStats;
   isOwnProfile: boolean;
-  isFollowing?: boolean;
-  onFollowChange?: (isFollowing: boolean) => void;
+  initialIsFollowing?: boolean;
 }
 
 export function ProfileHeader({
   user,
   isOwnProfile,
-  isFollowing = false,
-  onFollowChange,
+  initialIsFollowing = false,
 }: ProfileHeaderProps) {
   const { user: clerkUser } = useUser();
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [followersCount, setFollowersCount] = useState(user.followers_count);
 
   // 프로필 이미지 (기본 아바타: 이름 첫 글자)
   const avatarText = user.name.charAt(0).toUpperCase();
+
+  const handleFollowChange = (newIsFollowing: boolean) => {
+    setIsFollowing(newIsFollowing);
+    // Optimistic UI: 팔로우 수 업데이트
+    setFollowersCount((prev) => (newIsFollowing ? prev + 1 : prev - 1));
+  };
 
   return (
     <div className="w-full">
@@ -60,22 +68,11 @@ export function ProfileHeader({
                 프로필 편집
               </Link>
             ) : (
-              <button
-                onClick={() => {
-                  // 팔로우 기능은 Phase 9에서 구현
-                  if (onFollowChange) {
-                    onFollowChange(!isFollowing);
-                  }
-                }}
-                className={cn(
-                  "px-4 py-1.5 text-instagram-sm font-instagram-semibold rounded-md transition-colors",
-                  isFollowing
-                    ? "bg-[var(--instagram-card-background)] border border-[var(--instagram-border)] text-[var(--instagram-text-primary)] hover:border-red-500 hover:text-red-500"
-                    : "bg-[var(--instagram-blue)] text-white hover:bg-blue-600"
-                )}
-              >
-                {isFollowing ? "팔로잉" : "팔로우"}
-              </button>
+              <FollowButton
+                followingId={user.clerk_id}
+                initialIsFollowing={isFollowing}
+                onFollowChange={handleFollowChange}
+              />
             )}
           </div>
 
@@ -91,7 +88,7 @@ export function ProfileHeader({
             </div>
             <button className="flex items-center gap-1 hover:opacity-70 transition-opacity">
               <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-                {user.followers_count.toLocaleString()}
+                {followersCount.toLocaleString()}
               </span>
               <span className="text-instagram-base text-[var(--instagram-text-primary)]">
                 팔로워
@@ -130,21 +127,12 @@ export function ProfileHeader({
                 프로필 편집
               </Link>
             ) : (
-              <button
-                onClick={() => {
-                  if (onFollowChange) {
-                    onFollowChange(!isFollowing);
-                  }
-                }}
-                className={cn(
-                  "w-full px-4 py-1.5 text-instagram-sm font-instagram-semibold rounded-md transition-colors",
-                  isFollowing
-                    ? "bg-[var(--instagram-card-background)] border border-[var(--instagram-border)] text-[var(--instagram-text-primary)] hover:border-red-500 hover:text-red-500"
-                    : "bg-[var(--instagram-blue)] text-white hover:bg-blue-600"
-                )}
-              >
-                {isFollowing ? "팔로잉" : "팔로우"}
-              </button>
+              <FollowButton
+                followingId={user.clerk_id}
+                initialIsFollowing={isFollowing}
+                onFollowChange={handleFollowChange}
+                className="w-full"
+              />
             )}
           </div>
         </div>
@@ -161,7 +149,7 @@ export function ProfileHeader({
           </div>
           <button className="flex flex-col items-center hover:opacity-70 transition-opacity">
             <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-              {user.followers_count.toLocaleString()}
+              {followersCount.toLocaleString()}
             </span>
             <span className="text-instagram-xs text-[var(--instagram-text-secondary)]">
               팔로워
