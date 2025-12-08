@@ -62,14 +62,17 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Error adding like:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, like: data });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }
@@ -80,7 +83,10 @@ export async function DELETE(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -88,7 +94,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!postId) {
       return NextResponse.json(
-        { error: "postId is required" },
+        { error: "게시물 ID가 필요합니다." },
         { status: 400 }
       );
     }
@@ -104,7 +110,7 @@ export async function DELETE(request: NextRequest) {
 
     if (userError || !userData) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "사용자를 찾을 수 없습니다." },
         { status: 404 }
       );
     }
@@ -118,14 +124,17 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error("Error removing like:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "좋아요 취소에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }

@@ -191,4 +191,28 @@
       transform: translate(-50%, -50%) scale(0.5);
     }
   }
+
+  /* 모바일 스크롤 최적화 */
+  @media (max-width: 767px) {
+    /* iOS Safari 부드러운 스크롤 */
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Pull-to-refresh 방지 (필요시) */
+    body {
+      overscroll-behavior-y: contain;
+    }
+  }
+
+  /* 애니메이션 감소 설정 지원 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

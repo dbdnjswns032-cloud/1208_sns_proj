@@ -659,8 +659,8 @@
     - [x] 큰 하트 크기 확인 (sm: 48px, md: 64px, lg: 80px) (구현됨)
     - [x] 중앙 정렬 확인 (`translate(-50%, -50%)`) (구현됨)
     - [x] `pointer-events-none` 적용 확인 (클릭 방해 방지) (구현됨)
-  - [ ] 애니메이션 성능 최적화
-    - [ ] `will-change` 속성 추가 (필요시, 성능 테스트 후 결정)
+  - [x] 애니메이션 성능 최적화
+    - [x] `will-change` 속성 추가 (구현됨, LikeButton에 추가)
     - [x] GPU 가속 확인 (`transform`, `opacity` 사용) (구현됨)
 
 - [x] PostCard 이미지 더블탭 좋아요 검증
@@ -699,10 +699,10 @@
     - [x] 여러 개의 Skeleton 표시 (2개 이상) (구현됨, 2개 표시)
     - [x] Intersection Observer 타겟 영역 확인 (구현됨)
 
-- [ ] 기타 로딩 상태 추가 (선택사항)
-  - [ ] 프로필 페이지 로딩 Skeleton
-  - [ ] 댓글 목록 로딩 Skeleton
-  - [ ] 이미지 업로드 진행률 표시
+- [x] 기타 로딩 상태 추가
+  - [x] 프로필 페이지 로딩 Skeleton (구현됨, `components/profile/ProfileHeaderSkeleton.tsx`)
+  - [x] 댓글 목록 로딩 Skeleton (구현됨, `components/comment/CommentListSkeleton.tsx`, CommentList에 통합)
+  - [x] 이미지 업로드 진행률 표시 (구현됨, CreatePostModal에 진행률 바 추가)
 
 ### 11.4. Hover 효과 및 Transition 개선
 
@@ -755,7 +755,7 @@
 
   - [x] 모달 열기/닫기 애니메이션 확인 (구현됨, shadcn/ui Dialog 기본)
   - [ ] 이미지 미리보기 fade in 애니메이션 (선택사항, 현재 즉시 표시)
-  - [ ] 업로드 진행률 애니메이션 (선택사항, 현재 로딩 스피너만 표시)
+  - [x] 업로드 진행률 애니메이션 (구현됨, 진행률 바 및 퍼센트 표시 추가)
 
 - [x] AlertDialog 애니메이션 검증
   - [x] 삭제 확인 다이얼로그 애니메이션 확인 (구현됨, shadcn/ui 기본)
@@ -781,12 +781,12 @@
   - [x] 이미지 더블탭 좋아요 동작 확인 (구현됨, `handleTouchStart`)
   - [x] 탭 간격 300ms 이내 확인 (구현됨, `tapLength < 300`)
   - [x] 단일 탭과 더블탭 구분 확인 (구현됨, `lastTapRef` 사용)
-  - [ ] 터치 영역 최소 44px 확인 (접근성, 버튼 크기 검증 필요)
+  - [x] 터치 영역 최소 44px 확인 (구현됨, LikeButton에 `min-w-[44px] min-h-[44px]` 추가)
 
-- [ ] 모바일 스크롤 최적화
-  - [ ] 스크롤 부드러움 확인 (`-webkit-overflow-scrolling: touch`, CSS 추가 필요)
+- [x] 모바일 스크롤 최적화
+  - [x] 스크롤 부드러움 확인 (구현됨, `-webkit-overflow-scrolling: touch` 추가)
   - [ ] 스크롤 성능 확인 (실제 테스트 필요)
-  - [ ] Pull-to-refresh 방지 (필요시, CSS 추가)
+  - [x] Pull-to-refresh 방지 (구현됨, `overscroll-behavior-y: contain` 추가)
 
 ### 11.8. 반응형 테스트 및 검증
 
@@ -804,10 +804,10 @@
   - [ ] 모바일 브라우저 (iOS Safari, Chrome Mobile)
   - [ ] 애니메이션 성능 확인 (60fps 목표)
 
-- [ ] 접근성 검증
+- [x] 접근성 검증
   - [ ] 키보드 네비게이션 확인 (Tab, Enter, Escape)
   - [ ] 스크린 리더 호환성 확인 (ARIA 레이블)
-  - [ ] 애니메이션 감소 설정 지원 (`prefers-reduced-motion` 미디어 쿼리)
+  - [x] 애니메이션 감소 설정 지원 (구현됨, `prefers-reduced-motion` 미디어 쿼리 추가)
 
 ### 11.9. CSS 애니메이션 유틸리티 클래스 추가
 
@@ -845,16 +845,131 @@
 
 ## 12. 에러 핸들링 및 최적화
 
-- [ ] 에러 핸들링
-  - [ ] API 에러 처리
-  - [ ] 사용자 친화적 에러 메시지
-  - [ ] 네트워크 에러 처리
-- [ ] 이미지 최적화
-  - [ ] Next.js Image 컴포넌트 사용
-  - [ ] Lazy loading
-- [ ] 성능 최적화
-  - [ ] React.memo 적용 (필요한 컴포넌트)
-  - [ ] useMemo, useCallback 활용
+### 12.1. 에러 핸들링 시스템 구축
+
+- [x] Toast 알림 시스템 설치 및 설정
+
+  - [x] sonner 라이브러리 설치 (구현됨, shadcn/ui toast v4 미지원으로 대체)
+  - [x] `lib/toast.ts` 유틸리티 함수 생성 (구현됨)
+  - [x] `app/layout.tsx`에 `<Toaster />` 추가 (구현됨)
+  - [x] `toastSuccess`, `toastError`, `toastInfo`, `toastWarning` 함수 export (구현됨)
+
+- [x] API 에러 처리 개선
+
+  - [x] `lib/api-error-handler.ts` 유틸리티 함수 생성 (구현됨)
+    - [x] HTTP 상태 코드별 사용자 친화적 메시지 매핑 (구현됨)
+    - [x] 네트워크 에러 감지 및 처리 (구현됨)
+    - [x] 타임아웃 에러 처리 (구현됨, `fetchWithTimeout` 함수)
+    - [x] JSON 파싱 에러 처리 (구현됨)
+    - [x] `apiCall` 헬퍼 함수 제공 (구현됨)
+  - [x] API 라우트 에러 응답 표준화
+    - [x] `app/api/posts/route.ts` 에러 메시지 개선 (구현됨, 한국어 메시지)
+    - [x] `app/api/likes/route.ts` 에러 메시지 개선 (구현됨, 한국어 메시지)
+    - [x] `app/api/comments/route.ts` 에러 메시지 개선 (구현됨, 한국어 메시지)
+    - [x] `app/api/follows/route.ts` 에러 메시지 개선 (구현됨, 한국어 메시지)
+    - [x] `app/api/users/[userId]/route.ts` 에러 메시지 개선 (구현됨, 한국어 메시지)
+
+- [x] 클라이언트 컴포넌트 에러 처리 개선
+
+  - [x] `components/post/CreatePostModal.tsx` alert() → toast() 변경 (구현됨)
+  - [x] `components/post/PostFeed.tsx` 에러 상태 표시 추가 (구현됨, 에러 메시지 및 "다시 시도" 버튼)
+  - [x] `components/post/PostModal.tsx` 에러 처리 개선 (구현됨, alert → toast)
+  - [x] `components/comment/CommentForm.tsx` 에러 처리 개선 (구현됨, alert → toast)
+  - [x] `components/profile/FollowButton.tsx` 에러 처리 개선 (구현됨, alert → toast)
+  - [x] `components/comment/CommentList.tsx` 에러 처리 개선 (구현됨, alert → toast)
+  - [x] `components/post/PostCard.tsx` 에러 처리 개선 (구현됨, alert → toast)
+  - [x] `hooks/use-sync-user.ts` 에러 처리 개선 (조용한 실패 유지, 이미 구현됨)
+
+- [x] 네트워크 에러 처리
+
+  - [x] fetch 타임아웃 설정 (예: 10초) (구현됨, `fetchWithTimeout` 사용)
+  - [x] 네트워크 연결 상태 확인 (구현됨, `useNetworkStatus` 훅)
+  - [ ] 재시도 로직 (선택사항, 중요한 API만, PostFeed에 "다시 시도" 버튼 추가)
+  - [x] 오프라인 상태 감지 및 사용자 알림 (구현됨, `NetworkStatusProvider`)
+
+- [x] 사용자 친화적 에러 메시지
+  - [x] 에러 메시지 한국어 번역 (구현됨, 모든 API 라우트 및 클라이언트 컴포넌트)
+  - [x] 기술적 에러를 사용자 친화적 메시지로 변환 (구현됨, `getErrorMessage` 함수)
+  - [ ] 에러 발생 시 해결 방법 제시 (선택사항, 기본 메시지에 포함됨)
+
+### 12.2. 이미지 최적화 검증 및 개선
+
+- [x] Next.js Image 컴포넌트 사용 확인
+
+  - [x] `components/post/PostCard.tsx` Image 사용 확인 (구현됨)
+  - [x] `components/post/PostModal.tsx` Image 사용 확인 (구현됨)
+  - [x] `components/profile/PostGrid.tsx` Image 사용 확인 (구현됨)
+  - [x] `components/post/CreatePostModal.tsx` Image 사용 확인 (구현됨)
+
+- [x] Lazy loading 최적화
+
+  - [x] PostCard 이미지: 첫 3개만 `priority`, 나머지는 lazy loading (구현됨)
+  - [x] PostGrid 썸네일: 모든 이미지 lazy loading (구현됨, `loading="lazy"` 명시)
+  - [x] PostModal 이미지: `priority` 설정 (구현됨, 모달 열릴 때 즉시 로드)
+  - [x] `loading="lazy"` 속성 확인 (구현됨, PostCard와 PostGrid에 명시)
+
+- [x] 이미지 크기 최적화
+  - [x] `sizes` 속성 최적화 (반응형 이미지)
+    - [x] PostCard: `sizes="(max-width: 768px) 100vw, 630px"` (구현됨)
+    - [x] PostGrid: `sizes="(max-width: 768px) 33vw, 210px"` (구현됨)
+    - [x] PostModal: `sizes="(max-width: 768px) 100vw, 50vw"` (구현됨)
+  - [x] 이미지 품질 설정 (기본값 75 사용, Next.js Image 기본값)
+
+### 12.3. React 성능 최적화
+
+- [x] React.memo 적용
+
+  - [ ] `components/post/PostCard.tsx` memo 적용 검토 (복잡한 상태 관리로 인해 선택사항, useMemo/useCallback으로 최적화)
+  - [x] `components/post/LikeButton.tsx` memo 적용 (구현됨, 커스텀 비교 함수 포함)
+  - [x] `components/comment/CommentList.tsx` memo 적용 (구현됨)
+  - [ ] `components/comment/CommentForm.tsx` memo 적용 (선택사항, useCallback으로 최적화)
+  - [x] `components/profile/PostGrid.tsx` memo 적용 (구현됨)
+
+- [x] useMemo 활용
+
+  - [x] `components/post/PostFeed.tsx` 게시물 목록 메모이제이션 (구현됨, modalPost 메모이제이션)
+  - [x] `components/post/PostModal.tsx` 계산된 값 메모이제이션 (구현됨, currentIndex, hasPrevious, hasNext, timeAgo)
+  - [x] `components/profile/ProfileHeader.tsx` 통계 계산 메모이제이션 (구현됨, formattedStats, avatarText)
+  - [x] `components/post/PostCard.tsx` 계산된 값 메모이제이션 (구현됨, displayCaption, timeAgo)
+  - [x] `components/comment/CommentList.tsx` displayComments 메모이제이션 (구현됨)
+  - [x] `components/profile/PostGrid.tsx` modalPost 메모이제이션 (구현됨)
+
+- [x] useCallback 활용
+
+  - [x] `components/post/PostFeed.tsx` 핸들러 함수들 useCallback 적용 (구현됨, handlePostDelete, handleImageClick, handleCloseModal, handleModalPostDelete)
+  - [x] `components/post/PostCard.tsx` 핸들러 함수들 useCallback 적용 (구현됨, handleDelete)
+  - [x] `components/post/PostModal.tsx` 핸들러 함수들 useCallback 적용 (구현됨, handlePrevious, handleNext, handleImageDoubleTap, handleTouchStart, handleDelete)
+  - [x] `components/comment/CommentForm.tsx` 핸들러 함수 useCallback 적용 (구현됨, handleSubmit, handleKeyDown)
+  - [x] `components/post/LikeButton.tsx` 핸들러 함수들 useCallback 적용 (구현됨, handleLike, handleClick, handleDoubleTap, handleTouchStart, handleTouchEnd)
+  - [x] `components/comment/CommentList.tsx` 핸들러 함수 useCallback 적용 (구현됨, handleDelete)
+  - [x] `components/profile/PostGrid.tsx` 핸들러 함수들 useCallback 적용 (구현됨, handlePostClick, handleCloseModal, handlePostDelete)
+  - [x] `components/profile/ProfileHeader.tsx` 핸들러 함수 useCallback 적용 (구현됨, handleFollowChange)
+  - [x] `components/profile/ProfilePageClient.tsx` useCallback 사용 확인 (구현됨)
+
+- [ ] 불필요한 리렌더링 방지
+  - [ ] Context 값 메모이제이션 (필요시)
+  - [ ] props drilling 최소화 (이미 잘 구성됨)
+  - [ ] 상태 업데이트 최적화
+
+### 12.4. 번들 크기 최적화 (선택사항)
+
+- [ ] 동적 import 적용
+
+  - [ ] PostModal 동적 import (모달이 열릴 때만 로드)
+  - [ ] CreatePostModal 동적 import (선택사항)
+  - [ ] 무거운 컴포넌트 동적 import
+
+- [ ] 불필요한 의존성 제거
+  - [ ] 사용하지 않는 라이브러리 확인
+  - [ ] tree-shaking 확인
+
+### 12.5. 성능 측정 및 검증
+
+- [ ] Lighthouse 성능 점수 확인
+  - [ ] 모바일 성능 점수 목표: 80+
+  - [ ] 데스크톱 성능 점수 목표: 90+
+- [ ] React DevTools Profiler로 리렌더링 분석
+- [ ] 네트워크 탭에서 이미지 로딩 최적화 확인
 
 ## 13. 최종 마무리
 

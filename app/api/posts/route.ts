@@ -54,12 +54,15 @@ export async function GET(request: NextRequest) {
 
       if (error) {
         console.error("Error fetching post:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json(
+          { error: "게시물을 불러오는 중 오류가 발생했습니다." },
+          { status: 500 }
+        );
       }
 
       if (!data) {
         return NextResponse.json(
-          { error: "Post not found" },
+          { error: "게시물을 찾을 수 없습니다." },
           { status: 404 }
         );
       }
@@ -159,7 +162,10 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
     }
 
     const formData = await request.formData();
@@ -168,7 +174,7 @@ export async function POST(request: NextRequest) {
 
     if (!imageFile) {
       return NextResponse.json(
-        { error: "Image file is required" },
+        { error: "이미지 파일을 선택해주세요." },
         { status: 400 }
       );
     }
@@ -176,7 +182,7 @@ export async function POST(request: NextRequest) {
     // 파일 타입 검증
     if (!imageFile.type.startsWith("image/")) {
       return NextResponse.json(
-        { error: "Only image files are allowed" },
+        { error: "이미지 파일만 업로드할 수 있습니다." },
         { status: 400 }
       );
     }
@@ -184,7 +190,7 @@ export async function POST(request: NextRequest) {
     // 파일 크기 검증 (5MB)
     if (imageFile.size > 5 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File size must be less than 5MB" },
+        { error: "파일 크기는 5MB를 초과할 수 없습니다." },
         { status: 400 }
       );
     }
@@ -192,7 +198,7 @@ export async function POST(request: NextRequest) {
     // 캡션 길이 검증 (2,200자)
     if (caption && caption.length > 2200) {
       return NextResponse.json(
-        { error: "Caption must be less than 2,200 characters" },
+        { error: "캡션은 2,200자를 초과할 수 없습니다." },
         { status: 400 }
       );
     }
@@ -237,7 +243,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error("Error uploading image:", uploadError);
       return NextResponse.json(
-        { error: uploadError.message },
+        { error: "이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요." },
         { status: 500 }
       );
     }
@@ -268,7 +274,7 @@ export async function POST(request: NextRequest) {
         .remove([uploadData.path]);
 
       return NextResponse.json(
-        { error: postError.message },
+        { error: "게시물 저장에 실패했습니다. 잠시 후 다시 시도해주세요." },
         { status: 500 }
       );
     }

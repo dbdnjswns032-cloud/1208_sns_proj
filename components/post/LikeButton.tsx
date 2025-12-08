@@ -10,9 +10,11 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo, useCallback } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
+import { toastError } from "@/lib/toast";
 
 interface LikeButtonProps {
   postId: string;
@@ -24,7 +26,7 @@ interface LikeButtonProps {
   showCount?: boolean;
 }
 
-export function LikeButton({
+function LikeButtonComponent({
   postId,
   initialLiked,
   initialLikesCount,
@@ -46,48 +48,64 @@ export function LikeButton({
     setLikesCount(initialLikesCount);
   }, [initialLiked, initialLikesCount]);
 
-  const handleLike = async (liked: boolean) => {
+  const handleLike = useCallback(async (liked: boolean) => {
     try {
       if (liked) {
         // 좋아요 추가
-        const response = await fetch("/api/likes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postId }),
-        });
+        const response = await fetchWithTimeout(
+          "/api/likes",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ postId }),
+          },
+          10000 // 10초 타임아웃
+        );
 
         if (response.ok) {
           setIsLiked(true);
           setLikesCount((prev) => prev + 1);
           onLikeChange?.(true, likesCount + 1);
+        } else {
+          const errorMessage = await extractErrorMessage(response);
+          toastError(errorMessage);
         }
       } else {
         // 좋아요 제거
-        const response = await fetch(`/api/likes?postId=${postId}`, {
-          method: "DELETE",
-        });
+        const response = await fetchWithTimeout(
+          `/api/likes?postId=${postId}`,
+          {
+            method: "DELETE",
+          },
+          10000 // 10초 타임아웃
+        );
 
         if (response.ok) {
           setIsLiked(false);
           setLikesCount((prev) => Math.max(0, prev - 1));
           onLikeChange?.(false, Math.max(0, likesCount - 1));
+        } else {
+          const errorMessage = await extractErrorMessage(response);
+          toastError(errorMessage);
         }
       }
     } catch (error) {
       console.error("Error toggling like:", error);
+      const errorMessage = getErrorMessage(error, "좋아요 처리 중 오류가 발생했습니다.");
+      toastError(errorMessage);
     }
-  };
+  }, [postId, likesCount, onLikeChange]);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     // 클릭 애니메이션
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 150);
 
     // 좋아요 토글
     handleLike(!isLiked);
-  };
+  }, [isLiked, handleLike]);
 
-  const handleDoubleTap = () => {
+  const handleDoubleTap = useCallback(() => {
     // 더블탭 좋아요 (모바일)
     if (!isLiked) {
       // 큰 하트 표시
@@ -97,9 +115,9 @@ export function LikeButton({
       // 좋아요 추가
       handleLike(true);
     }
-  };
+  }, [isLiked, handleLike]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const currentTime = new Date().getTime();
     const tapLength = currentTime - lastTapRef.current;
 
@@ -119,13 +137,13 @@ export function LikeButton({
     }
 
     lastTapRef.current = currentTime;
-  };
+  }, [handleDoubleTap]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     if (tapTimeoutRef.current) {
       clearTimeout(tapTimeoutRef.current);
     }
-  };
+  }, []);
 
   const sizeClasses = {
     sm: "w-5 h-5",
@@ -140,10 +158,11 @@ export function LikeButton({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "p-1 transition-transform duration-150",
+          "p-2 transition-transform duration-150 min-w-[44px] min-h-[44px] flex items-center justify-center",
           isAnimating && "scale-[1.3]",
           className
         )}
+        style={isAnimating ? { willChange: "transform" } : undefined}
         aria-label={isLiked ? "좋아요 취소" : "좋아요"}
       >
         <Heart
@@ -165,6 +184,7 @@ export function LikeButton({
             transform: "translate(-50%, -50%)",
             left: "50%",
             top: "50%",
+            willChange: "transform, opacity",
           }}
         >
           <Heart
@@ -186,4 +206,17 @@ export function LikeButton({
     </div>
   );
 }
+
+// React.memo로 메모이제이션 (props가 변경되지 않으면 리렌더링 방지)
+export const LikeButton = memo(LikeButtonComponent, (prevProps, nextProps) => {
+  // props 비교 함수: 중요한 props만 비교
+  return (
+    prevProps.postId === nextProps.postId &&
+    prevProps.initialLiked === nextProps.initialLiked &&
+    prevProps.initialLikesCount === nextProps.initialLikesCount &&
+    prevProps.size === nextProps.size &&
+    prevProps.showCount === nextProps.showCount &&
+    prevProps.className === nextProps.className
+  );
+});
 

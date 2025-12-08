@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
 
@@ -45,13 +47,13 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
 
     // 파일 타입 검증
     if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드할 수 있습니다.");
+      toastError("이미지 파일만 업로드할 수 있습니다.");
       return;
     }
 
     // 파일 크기 검증 (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("파일 크기는 5MB를 초과할 수 없습니다.");
+      toastError("파일 크기는 5MB를 초과할 수 없습니다.");
       return;
     }
 
@@ -67,33 +69,68 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
 
   const handleUpload = async () => {
     if (!selectedFile || !user) {
-      alert("이미지를 선택하고 로그인해주세요.");
+      toastError("이미지를 선택하고 로그인해주세요.");
       return;
     }
 
     if (caption.length > 2200) {
-      alert("캡션은 2,200자를 초과할 수 없습니다.");
+      toastError("캡션은 2,200자를 초과할 수 없습니다.");
       return;
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append("image", selectedFile);
       formData.append("caption", caption);
 
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        body: formData,
+      // XMLHttpRequest를 사용하여 진행률 추적
+      const xhr = new XMLHttpRequest();
+
+      const responseData = await new Promise<{ success: boolean; error?: string; post?: any }>((resolve, reject) => {
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              resolve(data);
+            } catch {
+              resolve({ success: true });
+            }
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(new Error(error.error || "게시물 업로드에 실패했습니다."));
+            } catch {
+              reject(new Error("게시물 업로드에 실패했습니다."));
+            }
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          reject(new Error("네트워크 오류가 발생했습니다."));
+        });
+
+        xhr.open("POST", "/api/posts");
+        xhr.send(formData);
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "게시물 업로드에 실패했습니다.");
+      if (!responseData.success) {
+        throw new Error(responseData.error || "게시물 업로드에 실패했습니다.");
       }
 
+      setUploadProgress(100);
+
       // 성공 시 모달 닫기 및 상태 초기화
+      toastSuccess("게시물이 업로드되었습니다.");
       onOpenChange(false);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -103,9 +140,13 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
       window.location.reload();
     } catch (error) {
       console.error("Error uploading post:", error);
-      alert(error instanceof Error ? error.message : "게시물 업로드에 실패했습니다.");
+      toastError(error instanceof Error ? error.message : "게시물 업로드에 실패했습니다.");
     } finally {
       setUploading(false);
+      // 성공 시에만 진행률 초기화 (에러 시에는 마지막 진행률 유지)
+      if (uploadProgress === 100) {
+        setTimeout(() => setUploadProgress(0), 500);
+      }
     }
   };
 
@@ -218,17 +259,25 @@ export function CreatePostModal({ open, onOpenChange }: CreatePostModalProps) {
                   </div>
                 </div>
 
-                {/* 업로드 버튼 */}
-                <div className="p-4 border-t border-[var(--instagram-border)]">
+                {/* 업로드 버튼 및 진행률 */}
+                <div className="p-4 border-t border-[var(--instagram-border)] space-y-2">
+                  {uploading && (
+                    <div className="w-full bg-[var(--instagram-border)] rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--instagram-blue)] transition-all duration-300 ease-out"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
                   <Button
                     onClick={handleUpload}
                     disabled={uploading || !selectedFile}
-                    className="w-full bg-[var(--instagram-blue)] hover:bg-[var(--instagram-blue)]/90 text-white disabled:opacity-50"
+                    className="w-full bg-[var(--instagram-blue)] hover:bg-[var(--instagram-blue)]/90 text-white disabled:opacity-50 min-h-[44px]"
                   >
                     {uploading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        업로드 중...
+                        업로드 중... {uploadProgress}%
                       </>
                     ) : (
                       "공유하기"

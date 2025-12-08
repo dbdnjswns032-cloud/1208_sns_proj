@@ -12,13 +12,15 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark, Heart, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useUser } from "@clerk/nextjs";
+import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
+import { toastError } from "@/lib/toast";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,7 @@ import { CommentList } from "@/components/comment/CommentList";
 import { CommentForm } from "@/components/comment/CommentForm";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 import { cn } from "@/lib/utils";
+import { toastError } from "@/lib/toast";
 
 interface PostModalProps {
   postId: string;
@@ -73,10 +76,15 @@ export function PostModal({
   const { user } = useUser();
   const supabase = useClerkSupabaseClient();
 
-  // 현재 게시물 인덱스 찾기
-  const currentIndex = allPosts.findIndex((p) => p.id === postId);
-  const hasPrevious = currentIndex > 0;
-  const hasNext = currentIndex < allPosts.length - 1 && currentIndex >= 0;
+  // 현재 게시물 인덱스 찾기 (메모이제이션)
+  const { currentIndex, hasPrevious, hasNext } = useMemo(() => {
+    const index = allPosts.findIndex((p) => p.id === postId);
+    return {
+      currentIndex: index,
+      hasPrevious: index > 0,
+      hasNext: index < allPosts.length - 1 && index >= 0,
+    };
+  }, [allPosts, postId]);
 
   // 게시물 데이터 로드
   useEffect(() => {
@@ -90,9 +98,14 @@ export function PostModal({
 
       setLoading(true);
       try {
-        const response = await fetch(`/api/posts?postId=${postId}`);
+        const response = await fetchWithTimeout(
+          `/api/posts?postId=${postId}`,
+          {},
+          10000 // 10초 타임아웃
+        );
         if (!response.ok) {
-          throw new Error("게시물을 불러올 수 없습니다.");
+          const errorMessage = await extractErrorMessage(response);
+          throw new Error(errorMessage);
         }
         const data = await response.json();
         if (data.post) {
@@ -101,6 +114,8 @@ export function PostModal({
         }
       } catch (error) {
         console.error("Error loading post:", error);
+        const errorMessage = getErrorMessage(error, "게시물을 불러올 수 없습니다.");
+        toastError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -154,7 +169,7 @@ export function PostModal({
   }, [post]);
 
   // 이전 게시물로 이동
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (hasPrevious && allPosts[currentIndex - 1]) {
       const prevPost = allPosts[currentIndex - 1];
       setPost(prevPost);
@@ -162,10 +177,10 @@ export function PostModal({
       // URL 업데이트 (선택사항)
       window.history.pushState({}, "", `/post/${prevPost.id}`);
     }
-  };
+  }, [hasPrevious, allPosts, currentIndex]);
 
   // 다음 게시물로 이동
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (hasNext && allPosts[currentIndex + 1]) {
       const nextPost = allPosts[currentIndex + 1];
       setPost(nextPost);
@@ -173,27 +188,30 @@ export function PostModal({
       // URL 업데이트 (선택사항)
       window.history.pushState({}, "", `/post/${nextPost.id}`);
     }
-  };
+  }, [hasNext, allPosts, currentIndex]);
 
   // 더블탭 좋아요
-  const handleImageDoubleTap = () => {
+  const handleImageDoubleTap = useCallback(() => {
     if (!isLiked) {
       setShowBigHeart(true);
       setTimeout(() => setShowBigHeart(false), 1000);
     }
-  };
+  }, [isLiked]);
 
   const lastTapRef = useRef(0);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTapRef.current;
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTapRef.current;
 
-    if (tapLength < 300 && tapLength > 0) {
-      e.preventDefault();
-      handleImageDoubleTap();
-    }
-    lastTapRef.current = currentTime;
-  };
+      if (tapLength < 300 && tapLength > 0) {
+        e.preventDefault();
+        handleImageDoubleTap();
+      }
+      lastTapRef.current = currentTime;
+    },
+    [handleImageDoubleTap]
+  );
 
   if (loading) {
     return (
@@ -226,24 +244,33 @@ export function PostModal({
     );
   }
 
-  const timeAgo = formatDistanceToNow(new Date(post.created_at), {
-    addSuffix: true,
-    locale: ko,
-  });
+  // 시간 포맷팅 (메모이제이션)
+  const timeAgo = useMemo(
+    () =>
+      formatDistanceToNow(new Date(post.created_at), {
+        addSuffix: true,
+        locale: ko,
+      }),
+    [post.created_at]
+  );
 
   // 게시물 삭제 핸들러
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!isOwnPost || !post || isDeleting) return;
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/posts/${post.id}`, {
-        method: "DELETE",
-      });
+      const response = await fetchWithTimeout(
+        `/api/posts/${post.id}`,
+        {
+          method: "DELETE",
+        },
+        10000 // 10초 타임아웃
+      );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "게시물 삭제에 실패했습니다.");
+        const errorMessage = await extractErrorMessage(response);
+        throw new Error(errorMessage);
       }
 
       // 삭제 성공 시 모달 닫기 및 부모 컴포넌트에 알림
@@ -251,12 +278,13 @@ export function PostModal({
       onClose();
     } catch (error) {
       console.error("Error deleting post:", error);
-      alert(error instanceof Error ? error.message : "게시물 삭제에 실패했습니다.");
+      const errorMessage = getErrorMessage(error, "게시물 삭제에 실패했습니다.");
+      toastError(errorMessage);
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
-  };
+  }, [isOwnPost, post, isDeleting, onPostDeleted, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

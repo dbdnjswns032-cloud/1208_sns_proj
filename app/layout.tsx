@@ -4,6 +4,8 @@ import { koKR } from "@clerk/localizations";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { SyncUserProvider } from "@/components/providers/sync-user-provider";
+import { NetworkStatusProvider } from "@/components/providers/network-status-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -59,7 +61,10 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <SyncUserProvider>
-            {children}
+            <NetworkStatusProvider>
+              {children}
+              <Toaster position="top-center" richColors />
+            </NetworkStatusProvider>
           </SyncUserProvider>
         </body>
       </html>

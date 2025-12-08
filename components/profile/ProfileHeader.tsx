@@ -33,14 +33,27 @@ export function ProfileHeader({
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followersCount, setFollowersCount] = useState(user.followers_count);
 
-  // 프로필 이미지 (기본 아바타: 이름 첫 글자)
-  const avatarText = user.name.charAt(0).toUpperCase();
+  // 프로필 이미지 (기본 아바타: 이름 첫 글자, 메모이제이션)
+  const avatarText = useMemo(
+    () => user.name.charAt(0).toUpperCase(),
+    [user.name]
+  );
 
-  const handleFollowChange = (newIsFollowing: boolean) => {
+  // 통계 포맷팅 (메모이제이션)
+  const formattedStats = useMemo(
+    () => ({
+      postsCount: user.posts_count.toLocaleString(),
+      followersCount: followersCount.toLocaleString(),
+      followingCount: user.following_count.toLocaleString(),
+    }),
+    [user.posts_count, followersCount, user.following_count]
+  );
+
+  const handleFollowChange = useCallback((newIsFollowing: boolean) => {
     setIsFollowing(newIsFollowing);
     // Optimistic UI: 팔로우 수 업데이트
     setFollowersCount((prev) => (newIsFollowing ? prev + 1 : prev - 1));
-  };
+  }, []);
 
   // 게시물 삭제 시 통계 업데이트 (외부에서 호출 가능하도록)
   // onPostDeleted는 함수가 아니라 트리거 역할
@@ -84,7 +97,7 @@ export function ProfileHeader({
           <div className="flex items-center gap-8 mb-4">
             <div className="flex items-center gap-1">
               <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-                {user.posts_count.toLocaleString()}
+                {formattedStats.postsCount}
               </span>
               <span className="text-instagram-base text-[var(--instagram-text-primary)]">
                 게시물
@@ -92,7 +105,7 @@ export function ProfileHeader({
             </div>
             <button className="flex items-center gap-1 hover:opacity-70 transition-opacity">
               <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-                {followersCount.toLocaleString()}
+                {formattedStats.followersCount}
               </span>
               <span className="text-instagram-base text-[var(--instagram-text-primary)]">
                 팔로워
@@ -100,7 +113,7 @@ export function ProfileHeader({
             </button>
             <button className="flex items-center gap-1 hover:opacity-70 transition-opacity">
               <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-                {user.following_count.toLocaleString()}
+                {formattedStats.followingCount}
               </span>
               <span className="text-instagram-base text-[var(--instagram-text-primary)]">
                 팔로잉
@@ -145,7 +158,7 @@ export function ProfileHeader({
         <div className="flex items-center justify-around border-t border-[var(--instagram-border)] pt-4">
           <div className="flex flex-col items-center">
             <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-              {user.posts_count.toLocaleString()}
+              {formattedStats.postsCount}
             </span>
             <span className="text-instagram-xs text-[var(--instagram-text-secondary)]">
               게시물
@@ -153,7 +166,7 @@ export function ProfileHeader({
           </div>
           <button className="flex flex-col items-center hover:opacity-70 transition-opacity">
             <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-              {followersCount.toLocaleString()}
+              {formattedStats.followersCount}
             </span>
             <span className="text-instagram-xs text-[var(--instagram-text-secondary)]">
               팔로워
@@ -161,7 +174,7 @@ export function ProfileHeader({
           </button>
           <button className="flex flex-col items-center hover:opacity-70 transition-opacity">
             <span className="text-instagram-base font-instagram-semibold text-[var(--instagram-text-primary)]">
-              {user.following_count.toLocaleString()}
+              {formattedStats.followingCount}
             </span>
             <span className="text-instagram-xs text-[var(--instagram-text-secondary)]">
               팔로잉

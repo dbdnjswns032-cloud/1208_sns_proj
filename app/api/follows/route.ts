@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (!followingId) {
       return NextResponse.json(
-        { error: "followingId is required" },
+        { error: "팔로우할 사용자 ID가 필요합니다." },
         { status: 400 }
       );
     }
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
     // 자기 자신 팔로우 방지
     if (clerkUserId === followingId) {
       return NextResponse.json(
-        { error: "You cannot follow yourself" },
+        { error: "자기 자신을 팔로우할 수 없습니다." },
         { status: 400 }
       );
     }
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (followerError || !followerData) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "사용자를 찾을 수 없습니다." },
         { status: 404 }
       );
     }
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (followingError || !followingData) {
       return NextResponse.json(
-        { error: "User to follow not found" },
+        { error: "팔로우할 사용자를 찾을 수 없습니다." },
         { status: 404 }
       );
     }
@@ -82,19 +85,22 @@ export async function POST(request: NextRequest) {
       // 중복 팔로우 에러 처리 (UNIQUE 제약 조건)
       if (error.code === "23505") {
         return NextResponse.json(
-          { error: "Already following this user" },
+          { error: "이미 팔로우 중인 사용자입니다." },
           { status: 409 }
         );
       }
       console.error("Error adding follow:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "팔로우 처리에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, follow: data }, { status: 201 });
   } catch (error) {
     console.error("Unexpected error in POST /api/follows:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }
@@ -105,7 +111,10 @@ export async function DELETE(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -143,7 +152,7 @@ export async function DELETE(request: NextRequest) {
 
     if (followingError || !followingData) {
       return NextResponse.json(
-        { error: "User to unfollow not found" },
+        { error: "언팔로우할 사용자를 찾을 수 없습니다." },
         { status: 404 }
       );
     }
@@ -157,7 +166,10 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error("Error removing follow:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "언팔로우 처리에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

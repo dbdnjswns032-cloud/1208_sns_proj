@@ -10,11 +10,14 @@
 
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useCallback } from "react";
+import Link from "next/link";
 import { Send } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toastError } from "@/lib/toast";
+import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
 
 interface CommentFormProps {
   postId: string;
@@ -31,11 +34,11 @@ export function CommentForm({
   const [submitting, setSubmitting] = useState(false);
   const { user } = useUser();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
 
     if (!user) {
-      alert("로그인이 필요합니다.");
+      toastError("로그인이 필요합니다.");
       return;
     }
 
@@ -46,20 +49,24 @@ export function CommentForm({
     setSubmitting(true);
 
     try {
-      const response = await fetch("/api/comments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetchWithTimeout(
+        "/api/comments",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId,
+            content: content.trim(),
+          }),
         },
-        body: JSON.stringify({
-          postId,
-          content: content.trim(),
-        }),
-      });
+        10000 // 10초 타임아웃
+      );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "댓글 작성에 실패했습니다.");
+        const errorMessage = await extractErrorMessage(response);
+        throw new Error(errorMessage);
       }
 
       // 성공 시 입력 필드 초기화
@@ -67,22 +74,22 @@ export function CommentForm({
       onCommentAdded?.();
     } catch (error) {
       console.error("Error submitting comment:", error);
-      alert(
-        error instanceof Error
-          ? error.message
-          : "댓글 작성에 실패했습니다."
-      );
+      const errorMessage = getErrorMessage(error, "댓글 작성에 실패했습니다.");
+      toastError(errorMessage);
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [user, content, postId, onCommentAdded]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit(e);
+      }
+    },
+    [handleSubmit]
+  );
 
   if (!user) {
     return (
