@@ -59,13 +59,16 @@ export function BottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full transition-colors",
                   "hover:bg-[var(--instagram-background)]",
+                  "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                   "text-[var(--instagram-text-primary)]"
                 )}
                 aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
               >
                 <Icon
                   className="w-6 h-6 transition-transform group-hover:scale-105"
                   strokeWidth={2}
+                  aria-hidden="true"
                 />
               </button>
             );
@@ -78,9 +81,11 @@ export function BottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full transition-colors",
                 "hover:bg-[var(--instagram-background)]",
+                "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                 isActive && "text-[var(--instagram-text-primary)]"
               )}
               aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
             >
               <Icon
                 className={cn(
@@ -88,6 +93,7 @@ export function BottomNav() {
                   isActive ? "scale-110" : "group-hover:scale-105"
                 )}
                 strokeWidth={isActive ? 2.5 : 2}
+                aria-hidden="true"
               />
             </Link>
           );

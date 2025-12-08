@@ -213,6 +213,68 @@ export function PostModal({
     [handleImageDoubleTap]
   );
 
+  // 시간 포맷팅 (메모이제이션) - Hook은 조건부 반환 전에 호출
+  const timeAgo = useMemo(
+    () =>
+      post
+        ? formatDistanceToNow(new Date(post.created_at), {
+            addSuffix: true,
+            locale: ko,
+          })
+        : "",
+    [post?.created_at]
+  );
+
+  // 게시물 삭제 핸들러 - Hook은 조건부 반환 전에 호출
+  const handleDelete = useCallback(async () => {
+    if (!isOwnPost || !post || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetchWithTimeout(
+        `/api/posts/${post.id}`,
+        {
+          method: "DELETE",
+        },
+        10000 // 10초 타임아웃
+      );
+
+      if (!response.ok) {
+        const errorMessage = await extractErrorMessage(response);
+        throw new Error(errorMessage);
+      }
+
+      // 삭제 성공 시 모달 닫기 및 부모 컴포넌트에 알림
+      onPostDeleted?.(post.id);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      const errorMessage = getErrorMessage(error, "게시물 삭제에 실패했습니다.");
+      toastError(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  }, [post, isDeleting, onPostDeleted, onClose]);
+
+  // 키보드 네비게이션 (좌/우 화살표 키)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && hasPrevious) {
+        e.preventDefault();
+        handlePrevious();
+      } else if (e.key === "ArrowRight" && hasNext) {
+        e.preventDefault();
+        handleNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, hasPrevious, hasNext, handlePrevious, handleNext]);
+
   if (loading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -244,77 +306,35 @@ export function PostModal({
     );
   }
 
-  // 시간 포맷팅 (메모이제이션)
-  const timeAgo = useMemo(
-    () =>
-      formatDistanceToNow(new Date(post.created_at), {
-        addSuffix: true,
-        locale: ko,
-      }),
-    [post.created_at]
-  );
-
-  // 게시물 삭제 핸들러
-  const handleDelete = useCallback(async () => {
-    if (!isOwnPost || !post || isDeleting) return;
-
-    setIsDeleting(true);
-    try {
-      const response = await fetchWithTimeout(
-        `/api/posts/${post.id}`,
-        {
-          method: "DELETE",
-        },
-        10000 // 10초 타임아웃
-      );
-
-      if (!response.ok) {
-        const errorMessage = await extractErrorMessage(response);
-        throw new Error(errorMessage);
-      }
-
-      // 삭제 성공 시 모달 닫기 및 부모 컴포넌트에 알림
-      onPostDeleted?.(post.id);
-      onClose();
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      const errorMessage = getErrorMessage(error, "게시물 삭제에 실패했습니다.");
-      toastError(errorMessage);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  }, [isOwnPost, post, isDeleting, onPostDeleted, onClose]);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full h-[90vh] p-0 overflow-hidden flex flex-col md:flex-row">
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
           aria-label="닫기"
         >
-          <X className="w-5 h-5 text-white" />
+          <X className="w-5 h-5 text-white" aria-hidden="true" />
         </button>
 
         {/* 이전/다음 버튼 (Desktop만) */}
         {hasPrevious && (
           <button
             onClick={handlePrevious}
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
             aria-label="이전 게시물"
           >
-            <ChevronLeft className="w-6 h-6 text-white" />
+            <ChevronLeft className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
         {hasNext && (
           <button
             onClick={handleNext}
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
             aria-label="다음 게시물"
           >
-            <ChevronRight className="w-6 h-6 text-white" />
+            <ChevronRight className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
 

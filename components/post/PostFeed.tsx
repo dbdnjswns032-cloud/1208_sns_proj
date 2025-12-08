@@ -39,8 +39,9 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
   }, []);
 
-  const fetchPosts = useCallback(async (currentOffset: number) => {
-    if (loading || !hasMore) return;
+  const fetchPosts = useCallback(
+    async (currentOffset: number) => {
+      if (loading || !hasMore) return;
 
     setLoading(true);
     setError(null); // 에러 상태 초기화
@@ -86,7 +87,9 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+    },
+    [userId, loading, hasMore]
+  );
 
   // Intersection Observer로 무한 스크롤 구현
   useEffect(() => {

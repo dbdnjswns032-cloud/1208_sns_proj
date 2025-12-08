@@ -11,8 +11,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
-import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { PostGrid } from "@/components/profile/PostGrid";
+import { ProfilePageClient } from "@/components/profile/ProfilePageClient";
 import type { UserWithStats, PostWithStatsAndUser } from "@/lib/types";
 
 interface ProfilePageProps {

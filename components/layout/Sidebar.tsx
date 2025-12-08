@@ -72,12 +72,15 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors w-full text-left",
                       "hover:bg-[var(--instagram-background)]",
-                      "font-instagram-normal text-[var(--instagram-text-primary)]"
+                      "font-instagram-normal text-[var(--instagram-text-primary)]",
+                      "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2"
                     )}
+                    aria-label={item.label}
                   >
                     <Icon
                       className="w-6 h-6 transition-transform group-hover:scale-105"
                       strokeWidth={2}
+                      aria-hidden="true"
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </button>
@@ -95,10 +98,13 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
                       "hover:bg-[var(--instagram-background)]",
+                      "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                       isActive
                         ? "font-instagram-semibold text-[var(--instagram-text-primary)]"
                         : "font-instagram-normal text-[var(--instagram-text-primary)]"
                     )}
+                    aria-label={item.label}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <Icon
                       className={cn(
@@ -106,6 +112,7 @@ export function Sidebar() {
                         isActive ? "scale-110" : "group-hover:scale-105"
                       )}
                       strokeWidth={isActive ? 2.5 : 2}
+                      aria-hidden="true"
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </Link>
@@ -119,10 +126,13 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
                     "hover:bg-[var(--instagram-background)]",
+                    "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                     isActive
                       ? "font-instagram-semibold text-[var(--instagram-text-primary)]"
                       : "font-instagram-normal text-[var(--instagram-text-primary)]"
                   )}
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <Icon
                     className={cn(
@@ -130,6 +140,7 @@ export function Sidebar() {
                       isActive ? "scale-110" : "group-hover:scale-105"
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
+                    aria-hidden="true"
                   />
                   <span className="text-instagram-base">{item.label}</span>
                 </Link>

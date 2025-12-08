@@ -134,6 +134,12 @@ function CommentListComponent({
     }
   }, [user, onDelete]);
 
+  // 표시할 댓글 (limit 적용, 메모이제이션) - Hook은 조건부 반환 전에 호출
+  const displayComments = useMemo(
+    () => (showAll ? comments : comments.slice(-limit)),
+    [comments, showAll, limit]
+  );
+
   if (loading) {
     return (
       <div className="px-4 pb-4">
@@ -145,12 +151,6 @@ function CommentListComponent({
   if (comments.length === 0) {
     return null;
   }
-
-  // 표시할 댓글 (limit 적용, 메모이제이션)
-  const displayComments = useMemo(
-    () => (showAll ? comments : comments.slice(-limit)),
-    [comments, showAll, limit]
-  );
 
   return (
     <div
