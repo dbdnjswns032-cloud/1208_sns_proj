@@ -23,6 +23,8 @@ import { useUser } from "@clerk/nextjs";
 import type { PostWithStatsAndUser } from "@/lib/types";
 import { LikeButton } from "./LikeButton";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
+import { CommentList } from "@/components/comment/CommentList";
+import { CommentForm } from "@/components/comment/CommentForm";
 
 interface PostCardProps {
   post: PostWithStatsAndUser;
@@ -225,25 +227,25 @@ export function PostCard({ post }: PostCardProps) {
       )}
 
       {/* 댓글 미리보기 (최신 2개) */}
-      {post.comments_count > 0 && (
-        <div className="px-4 pb-4">
-          <Link
-            href={`/post/${post.id}`}
-            className="text-instagram-xs text-[var(--instagram-text-secondary)] hover:opacity-70 mb-2 block"
-          >
-            댓글 {post.comments_count.toLocaleString()}개 모두 보기
-          </Link>
-          {/* TODO: 실제 댓글 데이터 연동 */}
-          <div className="space-y-1">
-            <p className="text-instagram-sm text-[var(--instagram-text-primary)]">
-              <span className="font-instagram-semibold">username2</span> 멋진 사진이네요!
-            </p>
-            <p className="text-instagram-sm text-[var(--instagram-text-primary)]">
-              <span className="font-instagram-semibold">username3</span> 좋아요 👍
-            </p>
-          </div>
-        </div>
-      )}
+      <CommentList
+        postId={post.id}
+        limit={2}
+        showAll={false}
+        onDelete={() => {
+          // 댓글 삭제 시 좋아요 수 업데이트 (실제로는 서버에서 자동 업데이트됨)
+          // 필요시 여기서 댓글 수를 감소시킬 수 있음
+        }}
+      />
+
+      {/* 댓글 작성 폼 */}
+      <CommentForm
+        postId={post.id}
+        onCommentAdded={() => {
+          // 댓글 추가 후 피드 새로고침 (또는 댓글 수 업데이트)
+          // 실제로는 서버에서 자동으로 comments_count가 업데이트됨
+          // 필요시 여기서 댓글 수를 증가시킬 수 있음
+        }}
+      />
     </article>
   );
 }
