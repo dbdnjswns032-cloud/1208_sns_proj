@@ -133,14 +133,110 @@
 
 ## 7. 게시물 상세 모달
 
-- [ ] `components/post/PostModal.tsx`
-  - [ ] Desktop: 모달 형식 (이미지 50% + 댓글 50%)
-  - [ ] Mobile: 전체 페이지로 전환
-  - [ ] 닫기 버튼 (✕)
-  - [ ] 이전/다음 게시물 네비게이션 (Desktop)
-- [ ] PostCard 클릭 시 PostModal 열기
-  - [ ] 게시물 상세 정보 로드
-  - [ ] 댓글 전체 목록 표시
+### 7.1. PostModal 컴포넌트 생성
+
+- [x] `components/post/PostModal.tsx` 파일 생성
+  - [x] Props 인터페이스 정의
+    - [x] `postId: string` (필수)
+    - [x] `isOpen: boolean` (필수)
+    - [x] `onClose: () => void` (필수)
+    - [x] `initialPost?: PostWithStatsAndUser` (선택, 이미 로드된 게시물 데이터)
+    - [x] `allPosts?: PostWithStatsAndUser[]` (이전/다음 네비게이션용)
+  - [x] Dialog 컴포넌트 사용 (shadcn/ui)
+  - [x] 반응형 레이아웃 구현
+    - [x] Desktop (1024px+): 모달 형식 (이미지 50% + 댓글 50%)
+    - [x] Mobile (< 1024px): 전체 페이지로 전환 (DialogContent 커스터마이징)
+  - [x] 닫기 버튼 (✕) 구현
+    - [x] 우측 상단에 배치
+    - [x] 클릭 시 `onClose` 호출
+    - [x] ESC 키로도 닫기 가능 (Dialog 기본 기능)
+  - [x] 이전/다음 게시물 네비게이션 (Desktop만)
+    - [x] 좌측/우측 화살표 버튼
+    - [x] 현재 게시물 기준 이전/다음 게시물 ID 조회
+    - [x] 클릭 시 해당 게시물로 이동 (모달 내용 업데이트)
+    - [x] 첫 번째/마지막 게시물일 경우 버튼 비활성화
+
+### 7.2. 모달 내부 레이아웃 구성
+
+- [x] 좌측 영역: 이미지 표시
+  - [x] Next.js Image 컴포넌트 사용
+  - [x] 1:1 비율 유지 (정사각형)
+  - [x] Desktop: 50% 너비
+  - [x] Mobile: 전체 너비
+  - [x] 더블탭 좋아요 기능 (PostCard와 동일)
+- [x] 우측 영역: 게시물 정보 + 댓글 (Desktop만)
+  - [x] 헤더 섹션
+    - [x] 프로필 이미지 (32px 원형)
+    - [x] 사용자명 (프로필 링크)
+    - [x] ⋯ 메뉴 버튼 (게시물 삭제 등, 추후 구현)
+  - [x] 게시물 내용 섹션
+    - [x] 캡션 표시 (전체 내용, 줄바꿈 유지)
+    - [x] 시간 표시 (date-fns 사용)
+  - [x] 댓글 목록 섹션
+    - [x] CommentList 컴포넌트 재사용
+    - [x] `showAll={true}` prop 전달 (전체 댓글 표시)
+    - [x] 스크롤 가능한 영역 (max-height 설정)
+  - [x] 액션 버튼 섹션
+    - [x] LikeButton 통합
+    - [x] 좋아요 수 표시
+    - [x] 댓글, 공유, 북마크 아이콘 (UI만)
+  - [x] 댓글 작성 폼
+    - [x] CommentForm 컴포넌트 재사용
+    - [x] 댓글 추가 후 목록 자동 업데이트
+
+### 7.3. 게시물 데이터 로딩
+
+- [x] 게시물 상세 정보 로드
+  - [x] `initialPost` prop이 있으면 사용 (이미 로드된 데이터)
+  - [x] 없으면 `/api/posts?postId={postId}` API 호출
+  - [x] 로딩 상태 표시 (Spinner)
+  - [x] 에러 처리 (게시물을 찾을 수 없음 등)
+- [x] 이전/다음 게시물 ID 조회
+  - [x] 클라이언트에서 PostFeed의 게시물 목록 활용 (`allPosts` prop)
+
+### 7.4. PostCard와 통합
+
+- [x] PostCard 클릭 이벤트 추가
+  - [x] 이미지 영역 클릭 시 모달 열기
+  - [x] 댓글 "모두 보기" 링크 클릭 시 모달 열기
+  - [x] 모달에 `postId` 전달
+  - [x] `initialPost` prop으로 현재 게시물 데이터 전달 (불필요한 API 호출 방지)
+- [x] PostFeed에서 PostModal 상태 관리
+  - [x] `useState`로 현재 열린 모달의 `postId` 관리
+  - [x] 여러 PostCard에서 동일한 PostModal 인스턴스 공유
+  - [x] 모달 닫기 시 상태 초기화
+
+### 7.5. 모바일 반응형 처리
+
+- [x] Mobile 레이아웃
+  - [x] DialogContent를 전체 화면으로 확장
+  - [x] 이미지가 상단에 배치
+  - [x] 게시물 정보와 댓글이 하단에 스크롤 가능하게 배치
+  - [x] 닫기 버튼은 상단 고정
+- [x] 터치 제스처 지원
+  - [ ] 스와이프로 닫기 (선택사항, 추후 구현 가능)
+  - [x] 이미지 더블탭 좋아요 (PostCard와 동일)
+
+### 7.6. API 엔드포인트 (필요시)
+
+- [x] 단일 게시물 조회 API
+  - [x] 기존 `/api/posts`에 `postId` 쿼리 파라미터 추가
+  - [x] GET: 특정 게시물 상세 정보 조회
+  - [x] PostWithStatsAndUser 타입 반환
+
+### 7.7. 접근성 및 UX 개선
+
+- [x] 키보드 네비게이션
+  - [x] ESC 키로 모달 닫기 (Dialog 기본 기능)
+  - [ ] 좌/우 화살표 키로 이전/다음 게시물 이동 (선택사항)
+- [x] 포커스 관리
+  - [x] 모달 열릴 때 첫 번째 포커스 가능한 요소로 포커스 이동 (Dialog 기본 기능)
+  - [x] 모달 닫힐 때 이전 포커스 위치로 복귀 (Dialog 기본 기능)
+- [x] 스크롤 잠금
+  - [x] 모달 열릴 때 배경 스크롤 방지 (Dialog 기본 기능)
+- [x] 애니메이션
+  - [x] 모달 열기/닫기 애니메이션 (Dialog 기본 기능)
+  - [x] 더블탭 좋아요 큰 하트 애니메이션 (fadeInOut)
 
 ## 8. 프로필 페이지
 

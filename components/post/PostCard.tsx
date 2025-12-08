@@ -28,9 +28,10 @@ import { CommentForm } from "@/components/comment/CommentForm";
 
 interface PostCardProps {
   post: PostWithStatsAndUser;
+  onImageClick?: (postId: string) => void;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, onImageClick }: PostCardProps) {
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -129,7 +130,10 @@ export function PostCard({ post }: PostCardProps) {
       </header>
 
       {/* 이미지 영역 (1:1 정사각형) - 더블탭 좋아요 지원 */}
-      <div className="relative w-full aspect-square bg-[var(--instagram-background)]">
+      <div
+        className="relative w-full aspect-square bg-[var(--instagram-background)] cursor-pointer"
+        onClick={() => onImageClick?.(post.id)}
+      >
         <Image
           src={post.image_url}
           alt={post.caption || "게시물 이미지"}
@@ -236,6 +240,17 @@ export function PostCard({ post }: PostCardProps) {
           // 필요시 여기서 댓글 수를 감소시킬 수 있음
         }}
       />
+      {/* 댓글 "모두 보기" 링크 클릭 시 모달 열기 */}
+      {post.comments_count > 2 && (
+        <div className="px-4 pb-2">
+          <button
+            onClick={() => onImageClick?.(post.id)}
+            className="text-instagram-xs text-[var(--instagram-text-secondary)] hover:opacity-70"
+          >
+            댓글 {post.comments_count.toLocaleString()}개 모두 보기
+          </button>
+        </div>
+      )}
 
       {/* 댓글 작성 폼 */}
       <CommentForm

@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PostCard } from "./PostCard";
 import { PostCardSkeleton } from "./PostCardSkeleton";
+import { PostModal } from "./PostModal";
 import type { PostWithStatsAndUser } from "@/lib/types";
 
 interface PostFeedProps {
@@ -26,6 +27,7 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(initialPosts.length);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const fetchPosts = async (currentOffset: number) => {
@@ -83,13 +85,30 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
     };
   }, [offset, hasMore, loading, userId]);
 
+  const handleImageClick = (postId: string) => {
+    setModalPostId(postId);
+  };
+
+  const handleCloseModal = () => {
+    setModalPostId(null);
+  };
+
+  // 모달에 표시할 게시물 찾기
+  const modalPost = modalPostId
+    ? posts.find((p) => p.id === modalPostId)
+    : undefined;
+
   return (
     <div className="w-full">
       {/* 게시물 목록 */}
       {posts.length > 0 ? (
         <>
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard
+              key={post.id}
+              post={post}
+              onImageClick={handleImageClick}
+            />
           ))}
         </>
       ) : (
@@ -110,6 +129,17 @@ export function PostFeed({ initialPosts = [], userId }: PostFeedProps) {
 
       {/* Intersection Observer 타겟 */}
       <div ref={observerTarget} className="h-4" />
+
+      {/* 게시물 상세 모달 */}
+      {modalPostId && (
+        <PostModal
+          postId={modalPostId}
+          isOpen={!!modalPostId}
+          onClose={handleCloseModal}
+          initialPost={modalPost}
+          allPosts={posts}
+        />
+      )}
     </div>
   );
 }

@@ -27,6 +27,64 @@ export async function GET(request: NextRequest) {
     const supabase = createClerkSupabaseClient();
     const searchParams = request.nextUrl.searchParams;
 
+    // 단일 게시물 조회 (postId 파라미터가 있는 경우)
+    const postId = searchParams.get("postId");
+    if (postId) {
+      const { data, error } = await supabase
+        .from("post_stats")
+        .select(
+          `
+          post_id,
+          user_id,
+          image_url,
+          caption,
+          created_at,
+          likes_count,
+          comments_count,
+          users!post_stats_user_id_fkey (
+            id,
+            clerk_id,
+            name,
+            created_at
+          )
+        `
+        )
+        .eq("post_id", postId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching post:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (!data) {
+        return NextResponse.json(
+          { error: "Post not found" },
+          { status: 404 }
+        );
+      }
+
+      const post: PostWithStatsAndUser = {
+        id: data.post_id,
+        user_id: data.user_id,
+        image_url: data.image_url,
+        caption: data.caption,
+        created_at: data.created_at,
+        updated_at: data.created_at,
+        post_id: data.post_id,
+        likes_count: data.likes_count || 0,
+        comments_count: data.comments_count || 0,
+        user: {
+          id: data.users.id,
+          clerk_id: data.users.clerk_id,
+          name: data.users.name,
+          created_at: data.users.created_at,
+        },
+      };
+
+      return NextResponse.json({ post });
+    }
+
     // 쿼리 파라미터 파싱
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
