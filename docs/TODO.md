@@ -240,26 +240,124 @@
 
 ## 8. 프로필 페이지
 
-- [ ] `app/(main)/profile/[userId]/page.tsx`
-  - [ ] 동적 라우트 생성
-  - [ ] ProfileHeader 통합
-  - [ ] PostGrid 통합
-- [ ] `components/profile/ProfileHeader.tsx`
-  - [ ] 프로필 이미지 (150px Desktop / 90px Mobile)
-  - [ ] 사용자명
-  - [ ] 통계 (게시물 수, 팔로워 수, 팔로잉 수)
-  - [ ] "팔로우" / "팔로잉" 버튼 (다른 사람 프로필)
-  - [ ] "프로필 편집" 버튼 (본인 프로필, 1차 제외)
-- [ ] `components/profile/PostGrid.tsx`
-  - [ ] 3열 그리드 레이아웃 (반응형)
-  - [ ] 1:1 정사각형 썸네일
-  - [ ] Hover 시 좋아요/댓글 수 표시
-  - [ ] 클릭 시 게시물 상세 모달 열기
-- [ ] `app/api/users/[userId]/route.ts`
-  - [ ] GET: 사용자 정보 조회
-  - [ ] user_stats 뷰 활용
-- [ ] Sidebar "프로필" 버튼 연결
-  - [ ] `/profile`로 리다이렉트 (본인 프로필)
+### 8.1. 동적 라우트 생성
+
+- [x] `app/(main)/profile/[userId]/page.tsx` 파일 생성
+  - [x] Next.js 15 동적 라우트 구현 (`params`는 async로 받기)
+  - [x] `userId` 파라미터 파싱 (clerk_id 사용)
+  - [x] Server Component로 사용자 정보 및 게시물 초기 로드
+  - [x] ProfileHeader 컴포넌트 통합
+  - [x] PostGrid 컴포넌트 통합
+  - [x] 에러 처리 (사용자를 찾을 수 없음 등)
+  - [x] 본인 프로필 여부 확인 (Clerk `auth()` 사용)
+
+### 8.2. ProfileHeader 컴포넌트
+
+- [x] `components/profile/ProfileHeader.tsx` 파일 생성
+  - [x] Props 인터페이스 정의
+    - [x] `user: UserWithStats` (필수)
+    - [x] `isOwnProfile: boolean` (필수)
+    - [x] `isFollowing?: boolean` (선택, 팔로우 상태)
+    - [x] `onFollowChange?: (isFollowing: boolean) => void` (선택, 팔로우 상태 변경 콜백)
+  - [x] 반응형 레이아웃
+    - [x] Desktop: 가로 레이아웃 (프로필 이미지 + 정보)
+    - [x] Mobile: 세로 레이아웃 (프로필 이미지 상단, 정보 하단)
+  - [x] 프로필 이미지
+    - [x] Desktop: 150px 원형
+    - [x] Mobile: 90px 원형
+    - [x] 기본 아바타 (이름 첫 글자)
+  - [x] 사용자 정보 섹션
+    - [x] 사용자명 (Bold, 큰 글씨)
+    - [x] 통계 표시
+      - [x] 게시물 수 (`posts_count`)
+      - [x] 팔로워 수 (`followers_count`)
+      - [x] 팔로잉 수 (`following_count`)
+      - [x] 클릭 가능한 버튼 (추후 팔로워/팔로잉 목록 모달, 1차 제외)
+  - [x] 액션 버튼
+    - [x] 본인 프로필: "프로필 편집" 버튼 (링크만, 1차 제외)
+    - [x] 다른 사람 프로필: 팔로우 버튼 (UI만, Phase 9에서 기능 구현)
+      - [x] "팔로우" 버튼 (파란색, 미팔로우 상태)
+      - [x] "팔로잉" 버튼 (회색, 팔로우 중 상태)
+      - [x] Hover 시 "언팔로우" (빨간 테두리)
+
+### 8.3. PostGrid 컴포넌트
+
+- [x] `components/profile/PostGrid.tsx` 파일 생성
+  - [x] Props 인터페이스 정의
+    - [x] `posts: PostWithStatsAndUser[]` (필수)
+    - [x] `onPostClick?: (postId: string) => void` (선택, 게시물 클릭 핸들러)
+  - [x] 3열 그리드 레이아웃
+    - [x] Desktop: 3열 고정
+    - [x] Tablet: 3열 고정
+    - [x] Mobile: 3열 고정 (반응형으로 조정 가능)
+    - [x] `grid-cols-3` Tailwind 클래스 사용
+  - [x] 게시물 썸네일
+    - [x] 1:1 정사각형 비율 유지 (`aspect-square`)
+    - [x] Next.js Image 컴포넌트 사용
+    - [x] `object-cover`로 이미지 크롭
+    - [x] 게시물이 없을 경우 빈 상태 표시
+  - [x] Hover 효과
+    - [x] Desktop/Tablet: 마우스 hover 시 오버레이 표시
+      - [x] 좋아요 수 표시 (❤️ 아이콘 + 숫자)
+      - [x] 댓글 수 표시 (💬 아이콘 + 숫자)
+      - [x] 반투명 검은 배경
+      - [x] 흰색 텍스트
+    - [x] Mobile: hover 효과 없음 (터치 디바이스)
+  - [x] 클릭 이벤트
+    - [x] 게시물 썸네일 클릭 시 `onPostClick` 호출
+    - [x] PostModal 열기 (PostFeed와 동일한 방식)
+
+### 8.4. API 엔드포인트
+
+- [x] `app/api/users/[userId]/route.ts` 파일 생성
+  - [x] GET: 사용자 정보 조회
+    - [x] `userId` 파라미터 파싱 (clerk_id)
+    - [x] `user_stats` 뷰에서 데이터 조회
+      - [x] `user_id`, `clerk_id`, `name`
+      - [x] `posts_count`, `followers_count`, `following_count`
+    - [x] 사용자를 찾을 수 없을 경우 404 에러
+    - [x] `UserWithStats` 타입 반환
+    - [x] `users` 테이블에서 `created_at` 조회
+
+### 8.5. Sidebar 프로필 버튼 연결
+
+- [x] `components/layout/Sidebar.tsx` 수정
+  - [x] "프로필" 메뉴 항목 클릭 이벤트 추가
+  - [x] Clerk `useUser()` 훅으로 현재 사용자 정보 가져오기
+  - [x] `/profile/[clerk_id]`로 리다이렉트
+- [x] `components/layout/BottomNav.tsx` 수정
+  - [x] "프로필" 메뉴 항목 클릭 이벤트 추가
+  - [x] 동일한 로직 적용
+
+### 8.6. 프로필 페이지 통합
+
+- [x] 프로필 페이지에서 PostModal 통합
+  - [x] PostGrid의 게시물 클릭 시 PostModal 열기
+  - [x] PostFeed와 동일한 모달 상태 관리
+  - [x] 이전/다음 게시물 네비게이션 (프로필 페이지의 게시물 목록 기준)
+
+### 8.7. 반응형 및 스타일링
+
+- [x] Desktop 레이아웃
+  - [x] 프로필 이미지와 정보 가로 배치
+  - [x] 통계 숫자 클릭 가능한 버튼 스타일
+  - [x] 3열 그리드 고정 너비
+- [x] Mobile 레이아웃
+  - [x] 프로필 이미지 상단 중앙 배치
+  - [x] 사용자 정보 하단 배치
+  - [x] 통계 가로 배치 (3개)
+  - [x] 액션 버튼 전체 너비
+  - [x] 3열 그리드 유지 (작은 썸네일)
+
+### 8.8. 에러 처리 및 최적화
+
+- [x] 에러 처리
+  - [x] 사용자를 찾을 수 없을 경우 에러 메시지 표시
+  - [x] API 호출 실패 시 사용자 친화적 에러 메시지
+- [x] 성능 최적화
+  - [x] 이미지 lazy loading (Next.js Image 기본)
+  - [x] 초기 데이터는 Server Component에서 로드
+  - [x] 클라이언트 사이드 네비게이션 최적화
 
 ## 9. 팔로우 기능
 

@@ -35,7 +35,7 @@ const bottomNavItems: BottomNavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (

@@ -32,12 +32,12 @@ const navItems: NavItem[] = [
   { href: "/", icon: Home, label: "홈" },
   { href: "/search", icon: Search, label: "검색" },
   { href: "/create", icon: PlusSquare, label: "만들기", requiresAuth: true },
-  { href: "/profile", icon: User, label: "프로필", requiresAuth: true },
+  { href: "#", icon: User, label: "프로필", requiresAuth: true }, // href는 동적으로 설정
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
@@ -81,6 +81,34 @@ export function Sidebar() {
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </button>
+                );
+              }
+
+              // "프로필" 버튼은 본인 프로필로 리다이렉트
+              if (item.href === "#" && item.label === "프로필") {
+                const profileHref = user ? `/profile/${user.id}` : "/sign-in";
+                const isActive = pathname.startsWith("/profile/");
+                return (
+                  <Link
+                    key={item.href}
+                    href={profileHref}
+                    className={cn(
+                      "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
+                      "hover:bg-[var(--instagram-background)]",
+                      isActive
+                        ? "font-instagram-semibold text-[var(--instagram-text-primary)]"
+                        : "font-instagram-normal text-[var(--instagram-text-primary)]"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "w-6 h-6 transition-transform",
+                        isActive ? "scale-110" : "group-hover:scale-105"
+                      )}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span className="text-instagram-base">{item.label}</span>
+                  </Link>
                 );
               }
 
