@@ -13,11 +13,13 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusSquare, User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { CreatePostModal } from "@/components/post/CreatePostModal";
 
 interface NavItem {
   href: string;
@@ -36,6 +38,7 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const { isSignedIn } = useUser();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
     <aside className="fixed left-0 top-0 h-screen bg-[var(--instagram-card-background)] border-r border-[var(--instagram-border)] z-40 hidden md:block">
@@ -59,6 +62,27 @@ export function Sidebar() {
 
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+              // "만들기" 버튼은 모달 열기
+              if (item.href === "/create") {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className={cn(
+                      "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors w-full text-left",
+                      "hover:bg-[var(--instagram-background)]",
+                      "font-instagram-normal text-[var(--instagram-text-primary)]"
+                    )}
+                  >
+                    <Icon
+                      className="w-6 h-6 transition-transform group-hover:scale-105"
+                      strokeWidth={2}
+                    />
+                    <span className="text-instagram-base">{item.label}</span>
+                  </button>
+                );
+              }
 
               return (
                 <Link
@@ -101,6 +125,26 @@ export function Sidebar() {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
+              // "만들기" 버튼은 모달 열기
+              if (item.href === "/create") {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className={cn(
+                      "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                      "hover:bg-[var(--instagram-background)]"
+                    )}
+                    title={item.label}
+                  >
+                    <Icon
+                      className="w-6 h-6 transition-transform group-hover:scale-105"
+                      strokeWidth={2}
+                    />
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
@@ -125,6 +169,12 @@ export function Sidebar() {
           </nav>
         </div>
       </div>
+
+      {/* 게시물 작성 모달 */}
+      <CreatePostModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </aside>
   );
 }

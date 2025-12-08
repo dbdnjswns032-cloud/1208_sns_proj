@@ -10,11 +10,13 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusSquare, Heart, User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { CreatePostModal } from "@/components/post/CreatePostModal";
 
 interface BottomNavItem {
   href: string;
@@ -34,6 +36,7 @@ const bottomNavItems: BottomNavItem[] = [
 export function BottomNav() {
   const pathname = usePathname();
   const { isSignedIn } = useUser();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[50px] bg-[var(--instagram-card-background)] border-t border-[var(--instagram-border)] z-50">
@@ -46,6 +49,27 @@ export function BottomNav() {
 
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+          // "만들기" 버튼은 모달 열기
+          if (item.href === "/create") {
+            return (
+              <button
+                key={item.href}
+                onClick={() => setIsCreateModalOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full transition-colors",
+                  "hover:bg-[var(--instagram-background)]",
+                  "text-[var(--instagram-text-primary)]"
+                )}
+                aria-label={item.label}
+              >
+                <Icon
+                  className="w-6 h-6 transition-transform group-hover:scale-105"
+                  strokeWidth={2}
+                />
+              </button>
+            );
+          }
 
           return (
             <Link
@@ -69,6 +93,12 @@ export function BottomNav() {
           );
         })}
       </div>
+
+      {/* 게시물 작성 모달 */}
+      <CreatePostModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </nav>
   );
 }
