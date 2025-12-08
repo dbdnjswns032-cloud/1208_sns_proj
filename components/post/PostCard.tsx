@@ -13,14 +13,16 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MoreHorizontal, Heart, MessageCircle, Send, Bookmark } from "lucide-react";
+import { MoreHorizontal, MessageCircle, Send, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useUser } from "@clerk/nextjs";
 import type { PostWithStatsAndUser } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { LikeButton } from "./LikeButton";
+import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 
 interface PostCardProps {
   post: PostWithStatsAndUser;
@@ -28,7 +30,51 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const [showFullCaption, setShowFullCaption] = useState(false);
-  const [isLiked, setIsLiked] = useState(false); // TODO: 실제 좋아요 상태 연동
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes_count);
+  const { user } = useUser();
+  const supabase = useClerkSupabaseClient();
+
+  // 초기 좋아요 상태 확인
+  useEffect(() => {
+    async function checkLikeStatus() {
+      if (!user) {
+        setIsLiked(false);
+        return;
+      }
+
+      try {
+        // 사용자 ID 조회
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id")
+          .eq("clerk_id", user.id)
+          .single();
+
+        if (!userData) return;
+
+        // 좋아요 상태 확인
+        const { data: likeData } = await supabase
+          .from("likes")
+          .select("id")
+          .eq("post_id", post.id)
+          .eq("user_id", userData.id)
+          .single();
+
+        setIsLiked(!!likeData);
+      } catch (error) {
+        // 좋아요가 없으면 에러가 발생할 수 있음 (정상)
+        setIsLiked(false);
+      }
+    }
+
+    checkLikeStatus();
+  }, [user, post.id, supabase]);
+
+  // 좋아요 수 초기화
+  useEffect(() => {
+    setLikesCount(post.likes_count);
+  }, [post.likes_count]);
 
   // 캡션 처리: 2줄 초과 시 "... 더 보기" 표시
   const captionLines = post.caption?.split("\n") || [];
@@ -80,34 +126,45 @@ export function PostCard({ post }: PostCardProps) {
         </button>
       </header>
 
-      {/* 이미지 영역 (1:1 정사각형) */}
+      {/* 이미지 영역 (1:1 정사각형) - 더블탭 좋아요 지원 */}
       <div className="relative w-full aspect-square bg-[var(--instagram-background)]">
         <Image
           src={post.image_url}
           alt={post.caption || "게시물 이미지"}
           fill
-          className="object-cover"
+          className="object-cover select-none pointer-events-none"
           sizes="(max-width: 768px) 100vw, 630px"
           priority
         />
+        {/* 더블탭 좋아요를 위한 투명한 오버레이 */}
+        <div className="absolute inset-0 pointer-events-auto">
+          <LikeButton
+            postId={post.id}
+            initialLiked={isLiked}
+            initialLikesCount={likesCount}
+            onLikeChange={(liked, newCount) => {
+              setIsLiked(liked);
+              setLikesCount(newCount);
+            }}
+            className="w-full h-full opacity-0"
+            size="lg"
+          />
+        </div>
       </div>
 
       {/* 액션 버튼 */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
-          {/* 좋아요 */}
-          <button
-            className={cn(
-              "p-1 transition-transform hover:scale-110",
-              isLiked && "text-[var(--instagram-like)]"
-            )}
-            aria-label="좋아요"
-          >
-            <Heart
-              className={cn("w-6 h-6", isLiked && "fill-current")}
-              strokeWidth={isLiked ? 0 : 2}
-            />
-          </button>
+          {/* 좋아요 버튼 */}
+          <LikeButton
+            postId={post.id}
+            initialLiked={isLiked}
+            initialLikesCount={likesCount}
+            onLikeChange={(liked, newCount) => {
+              setIsLiked(liked);
+              setLikesCount(newCount);
+            }}
+          />
 
           {/* 댓글 */}
           <button
@@ -136,10 +193,10 @@ export function PostCard({ post }: PostCardProps) {
       </div>
 
       {/* 좋아요 수 */}
-      {post.likes_count > 0 && (
+      {likesCount > 0 && (
         <div className="px-4 pb-2">
           <span className="text-instagram-sm font-instagram-semibold text-[var(--instagram-text-primary)]">
-            좋아요 {post.likes_count.toLocaleString()}개
+            좋아요 {likesCount.toLocaleString()}개
           </span>
         </div>
       )}
