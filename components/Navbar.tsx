@@ -18,11 +18,11 @@ const Navbar = () => {
       <div className="flex gap-4 items-center">
         <SignedOut>
           {/* 로그인 버튼 - /sign-in 페이지로 리다이렉트 */}
-          <SignInButton mode="redirect" redirectUrl="/sign-in">
+          <SignInButton mode="redirect">
             <Button variant="outline">로그인</Button>
           </SignInButton>
           {/* 회원가입 버튼 - /sign-up 페이지로 리다이렉트 */}
-          <SignUpButton mode="redirect" redirectUrl="/sign-up">
+          <SignUpButton mode="redirect">
             <Button>회원가입</Button>
           </SignUpButton>
         </SignedOut>

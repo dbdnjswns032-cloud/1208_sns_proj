@@ -48,7 +48,7 @@ export default function TasksPage() {
 
   // useSession() hook은 Clerk 세션 객체를 가져옴
   // 세션 객체는 Clerk 세션 토큰을 가져오는 데 사용됨
-  const { session, isLoaded: sessionLoaded } = useSession();
+  const { isLoaded: sessionLoaded } = useSession();
 
   // Clerk 세션 토큰을 포함한 Supabase 클라이언트 생성
   const supabase = useClerkSupabaseClient();

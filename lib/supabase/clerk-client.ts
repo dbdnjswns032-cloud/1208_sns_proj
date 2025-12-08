@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import { useSession, useUser } from "@clerk/nextjs";
+import { useSession } from "@clerk/nextjs";
 import { useMemo } from "react";
 
 /**
@@ -41,7 +41,6 @@ import { useMemo } from "react";
  */
 export function useClerkSupabaseClient() {
   const { session } = useSession();
-  const { user } = useUser();
 
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

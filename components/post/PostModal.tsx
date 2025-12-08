@@ -46,8 +46,6 @@ import { LikeButton } from "./LikeButton";
 import { CommentList } from "@/components/comment/CommentList";
 import { CommentForm } from "@/components/comment/CommentForm";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
-import { cn } from "@/lib/utils";
-import { toastError } from "@/lib/toast";
 
 interface PostModalProps {
   postId: string;
@@ -75,6 +73,9 @@ export function PostModal({
   const [showBigHeart, setShowBigHeart] = useState(false);
   const { user } = useUser();
   const supabase = useClerkSupabaseClient();
+
+  // 본인 게시물인지 확인
+  const isOwnPost = user?.id === post?.user.clerk_id;
 
   // 현재 게시물 인덱스 찾기 (메모이제이션)
   const { currentIndex, hasPrevious, hasNext } = useMemo(() => {
@@ -151,7 +152,7 @@ export function PostModal({
           .single();
 
         setIsLiked(!!likeData);
-      } catch (error) {
+      } catch {
         setIsLiked(false);
       }
     }
@@ -222,7 +223,7 @@ export function PostModal({
             locale: ko,
           })
         : "",
-    [post?.created_at]
+    [post]
   );
 
   // 게시물 삭제 핸들러 - Hook은 조건부 반환 전에 호출
@@ -255,7 +256,7 @@ export function PostModal({
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
-  }, [post, isDeleting, onPostDeleted, onClose]);
+  }, [isOwnPost, post, isDeleting, onPostDeleted, onClose]);
 
   // 키보드 네비게이션 (좌/우 화살표 키)
   useEffect(() => {

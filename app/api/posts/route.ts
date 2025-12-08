@@ -67,6 +67,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // users는 관계 쿼리로 인해 배열일 수 있으므로 첫 번째 요소 사용
+      const userData = Array.isArray(data.users) ? data.users[0] : data.users;
+
       const post: PostWithStatsAndUser = {
         id: data.post_id,
         user_id: data.user_id,
@@ -78,10 +81,10 @@ export async function GET(request: NextRequest) {
         likes_count: data.likes_count || 0,
         comments_count: data.comments_count || 0,
         user: {
-          id: data.users.id,
-          clerk_id: data.users.clerk_id,
-          name: data.users.name,
-          created_at: data.users.created_at,
+          id: userData.id,
+          clerk_id: userData.clerk_id,
+          name: userData.name,
+          created_at: userData.created_at,
         },
       };
 

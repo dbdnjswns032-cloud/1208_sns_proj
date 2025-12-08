@@ -13,6 +13,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SkipLink } from "@/components/layout/SkipLink";
 
 export default function MainLayout({
   children,
@@ -21,6 +22,9 @@ export default function MainLayout({
 }>) {
   return (
     <div className="min-h-screen bg-[var(--instagram-background)]">
+      {/* 스킵 링크 (접근성) */}
+      <SkipLink />
+
       {/* Sidebar: Desktop/Tablet 전용 */}
       <Sidebar />
 
@@ -29,6 +33,7 @@ export default function MainLayout({
 
       {/* Main Content */}
       <main
+        id="main-content"
         className={`
           /* Desktop: Sidebar 너비만큼 왼쪽 여백 */
           lg:ml-[244px]

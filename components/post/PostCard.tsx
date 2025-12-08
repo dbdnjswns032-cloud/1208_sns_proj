@@ -90,7 +90,7 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
           .single();
 
         setIsLiked(!!likeData);
-      } catch (error) {
+      } catch {
         // 좋아요가 없으면 에러가 발생할 수 있음 (정상)
         setIsLiked(false);
       }

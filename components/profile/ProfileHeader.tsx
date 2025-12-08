@@ -11,12 +11,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import type { UserWithStats } from "@/lib/types";
 import { FollowButton } from "./FollowButton";
-import { cn } from "@/lib/utils";
 
 interface ProfileHeaderProps {
   user: UserWithStats;
@@ -29,7 +27,6 @@ export function ProfileHeader({
   isOwnProfile,
   initialIsFollowing = false,
 }: ProfileHeaderProps) {
-  const { user: clerkUser } = useUser();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followersCount, setFollowersCount] = useState(user.followers_count);
 

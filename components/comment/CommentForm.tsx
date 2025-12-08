@@ -12,7 +12,6 @@
 
 import { useState, FormEvent, useCallback } from "react";
 import Link from "next/link";
-import { Send } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

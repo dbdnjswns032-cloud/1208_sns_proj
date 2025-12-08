@@ -11,7 +11,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MessageCircle, User } from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
 

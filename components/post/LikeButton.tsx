@@ -40,7 +40,7 @@ function LikeButtonComponent({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showBigHeart, setShowBigHeart] = useState(false);
   const lastTapRef = useRef<number>(0);
-  const tapTimeoutRef = useRef<NodeJS.Timeout>();
+  const tapTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // 초기값이 변경되면 상태 업데이트 (서버에서 최신 데이터를 받았을 때)
   useEffect(() => {

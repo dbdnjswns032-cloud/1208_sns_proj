@@ -20,7 +20,7 @@ import { CreatePostModal } from "@/components/post/CreatePostModal";
 
 interface BottomNavItem {
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   requiresAuth?: boolean;
 }
@@ -35,7 +35,7 @@ const bottomNavItems: BottomNavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
@@ -68,7 +68,7 @@ export function BottomNav() {
                 <Icon
                   className="w-6 h-6 transition-transform group-hover:scale-105"
                   strokeWidth={2}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
               </button>
             );
@@ -93,7 +93,7 @@ export function BottomNav() {
                   isActive ? "scale-110" : "group-hover:scale-105"
                 )}
                 strokeWidth={isActive ? 2.5 : 2}
-                aria-hidden="true"
+                aria-hidden={true}
               />
             </Link>
           );

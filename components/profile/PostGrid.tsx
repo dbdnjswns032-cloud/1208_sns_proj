@@ -16,7 +16,6 @@ import Image from "next/image";
 import { Heart, MessageCircle } from "lucide-react";
 import type { PostWithStatsAndUser } from "@/lib/types";
 import { PostModal } from "@/components/post/PostModal";
-import { cn } from "@/lib/utils";
 
 interface PostGridProps {
   posts: PostWithStatsAndUser[];
