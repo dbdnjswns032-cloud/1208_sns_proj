@@ -187,14 +187,68 @@ domain = "your-app-12.clerk.accounts.dev"  # 3-1에서 복사한 Clerk domain
 
 #### 5. 데이터베이스 스키마 적용
 
-1. Supabase Dashboard → **SQL Editor** 메뉴
+**방법 1: Supabase Dashboard SQL Editor 사용 (권장)**
+
+1. [Supabase Dashboard](https://supabase.com/dashboard) → 프로젝트 선택 → **SQL Editor** 메뉴
 2. **"New query"** 클릭
-3. `supabase/migrations/schema.sql` 파일 내용을 복사하여 붙여넣기
-4. **"Run"** 클릭하여 실행
-5. 성공 메시지 확인 (`Success. No rows returned`)
+3. 다음 순서로 마이그레이션 파일 실행:
+
+   **5-1. 데이터베이스 스키마 마이그레이션**
+   - `supabase/migrations/20251208142145_initial_sns_schema.sql` 파일 내용을 복사하여 붙여넣기
+   - **"Run"** 클릭하여 실행
+   - 성공 메시지 확인 (`Success. No rows returned`)
+
+   **5-2. Storage 버킷 마이그레이션**
+   - `supabase/migrations/20251208142146_create_posts_storage_bucket.sql` 파일 내용을 복사하여 붙여넣기
+   - **"Run"** 클릭하여 실행
+   - 성공 메시지 확인
+
+**방법 2: Supabase CLI 사용**
+
+```bash
+# Supabase CLI 설치 (아직 설치하지 않은 경우)
+npm install -g supabase
+
+# Supabase 프로젝트 연결
+supabase link --project-ref your-project-ref
+
+# 마이그레이션 적용
+supabase db push
+```
 
 **생성되는 테이블:**
 - `users`: Clerk 사용자와 동기화되는 사용자 정보 테이블
+- `posts`: 게시물 테이블 (이미지 URL, 캡션)
+- `likes`: 좋아요 테이블
+- `comments`: 댓글 테이블
+- `follows`: 팔로우 관계 테이블
+
+**생성되는 뷰:**
+- `post_stats`: 게시물 통계 (좋아요 수, 댓글 수)
+- `user_stats`: 사용자 통계 (게시물 수, 팔로워 수, 팔로잉 수)
+
+**생성되는 Storage 버킷:**
+- `posts`: 게시물 이미지 저장용 (공개 읽기, 5MB 제한, 이미지 파일만)
+
+**마이그레이션 확인:**
+
+SQL Editor에서 다음 쿼리로 테이블 생성 확인:
+
+```sql
+-- 테이블 목록 확인
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+
+-- 뷰 목록 확인
+SELECT table_name 
+FROM information_schema.views 
+WHERE table_schema = 'public';
+
+-- Storage 버킷 확인
+SELECT * FROM storage.buckets;
+```
 
 #### 6. 환경 변수 설정
 
@@ -427,7 +481,8 @@ saas-template/
 │
 ├── supabase/             # Supabase 관련 파일
 │   ├── migrations/       # 데이터베이스 마이그레이션
-│   │   └── schema.sql   # 초기 스키마
+│   │   ├── 20251208142145_initial_sns_schema.sql  # 초기 스키마 (테이블, 뷰, 트리거)
+│   │   └── 20251208142146_create_posts_storage_bucket.sql  # Storage 버킷 생성
 │   └── config.toml       # Supabase 프로젝트 설정
 │
 ├── .cursor/              # Cursor AI 규칙
@@ -445,7 +500,37 @@ saas-template/
 - **`lib/supabase/`**: 환경별 Supabase 클라이언트 (매우 중요!)
 - **`hooks/use-sync-user.ts`**: Clerk 사용자를 Supabase에 자동 동기화
 - **`components/providers/sync-user-provider.tsx`**: 앱 전역에서 사용자 동기화 실행
+- **`lib/types.ts`**: 데이터베이스 스키마 기반 TypeScript 타입 정의
 - **`CLAUDE.md`**: Claude Code를 위한 프로젝트 가이드
+
+## 데이터베이스 마이그레이션
+
+### 마이그레이션 파일 구조
+
+프로젝트의 마이그레이션 파일은 `supabase/migrations/` 디렉토리에 있습니다:
+
+- **`20251208142145_initial_sns_schema.sql`**: 데이터베이스 스키마 초기 설정
+  - Users, Posts, Likes, Comments, Follows 테이블
+  - post_stats, user_stats 뷰
+  - updated_at 자동 업데이트 트리거
+- **`20251208142146_create_posts_storage_bucket.sql`**: Storage 버킷 생성
+  - posts 버킷 (공개 읽기, 5MB 제한, 이미지 파일만)
+  - 업로드/삭제/업데이트 정책
+
+### 마이그레이션 적용 순서
+
+1. **데이터베이스 스키마 마이그레이션** 먼저 실행
+2. **Storage 버킷 마이그레이션** 그 다음 실행
+
+### 타입 정의
+
+데이터베이스 스키마에 맞춘 TypeScript 타입은 `lib/types.ts`에 정의되어 있습니다:
+
+```typescript
+import type { User, Post, Like, Comment, Follow } from '@/lib/types';
+import type { PostStats, UserStats } from '@/lib/types';
+import type { PostWithStats, UserWithStats, PostWithUser } from '@/lib/types';
+```
 
 ## Supabase 클라이언트 사용법
 
