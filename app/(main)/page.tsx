@@ -9,24 +9,8 @@
  */
 
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
-import dynamic from "next/dynamic";
+import { PostFeed } from "@/components/post/PostFeed";
 import type { PostWithStatsAndUser } from "@/lib/types";
-
-// PostFeed를 클라이언트 사이드에서만 로드 (빌드 에러 방지)
-const PostFeed = dynamic(
-  () =>
-    import("@/components/post/PostFeed").then((mod) => ({
-      default: mod.PostFeed,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full py-12 text-center">
-        <p className="text-[var(--instagram-text-secondary)]">로딩 중...</p>
-      </div>
-    ),
-  },
-);
 
 async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
   try {
@@ -55,7 +39,6 @@ async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
       .limit(10);
 
     if (error) {
-      // 상세한 에러 로깅
       console.error("Error fetching initial posts:", {
         message: error?.message,
         details: error?.details,
@@ -66,16 +49,13 @@ async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
       return [];
     }
 
-    // 각 게시물에 대해 좋아요 수와 댓글 수를 별도로 조회
     const postsWithStats: PostWithStatsAndUser[] = await Promise.all(
       (data || []).map(async (post: any) => {
-        // 좋아요 수 조회
         const { count: likesCount } = await supabase
           .from("likes")
           .select("*", { count: "exact", head: true })
           .eq("post_id", post.id);
 
-        // 댓글 수 조회
         const { count: commentsCount } = await supabase
           .from("comments")
           .select("*", { count: "exact", head: true })
