@@ -14,7 +14,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusSquare, Heart, User, LogIn } from "lucide-react";
-import { useUser, SignedOut } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { CreatePostModal } from "@/components/post/CreatePostModal";
 
@@ -35,7 +35,7 @@ const bottomNavItems: BottomNavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
@@ -57,10 +57,7 @@ export function BottomNav() {
                   )}
                   aria-label="로그인"
                 >
-                  <LogIn
-                    className="w-6 h-6 transition-transform group-hover:scale-105"
-                    strokeWidth={2}
-                  />
+                  <LogIn className="w-6 h-6 transition-transform group-hover:scale-105" />
                 </Link>
               );
             }
@@ -68,7 +65,9 @@ export function BottomNav() {
           }
 
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
 
           // "만들기" 버튼은 모달 열기
           if (item.href === "/create") {
@@ -83,10 +82,7 @@ export function BottomNav() {
                 )}
                 aria-label={item.label}
               >
-                <Icon
-                  className="w-6 h-6 transition-transform group-hover:scale-105"
-                  strokeWidth={2}
-                />
+                <Icon className="w-6 h-6 transition-transform group-hover:scale-105" />
               </button>
             );
           }
@@ -107,7 +103,6 @@ export function BottomNav() {
                   "w-6 h-6 transition-transform",
                   isActive ? "scale-110" : "group-hover:scale-105"
                 )}
-                strokeWidth={isActive ? 2.5 : 2}
               />
             </Link>
           );
@@ -122,4 +117,5 @@ export function BottomNav() {
     </nav>
   );
 }
+
 

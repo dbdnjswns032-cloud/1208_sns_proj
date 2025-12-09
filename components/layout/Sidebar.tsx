@@ -84,10 +84,7 @@ export function Sidebar() {
                       "font-instagram-normal text-[var(--instagram-text-primary)]"
                     )}
                   >
-                    <Icon
-                      className="w-6 h-6 transition-transform group-hover:scale-105"
-                      strokeWidth={2}
-                    />
+                    <Icon className="w-6 h-6 transition-transform group-hover:scale-105" />
                     <span className="text-instagram-base">{item.label}</span>
                   </button>
                 );
@@ -114,7 +111,6 @@ export function Sidebar() {
                         "w-6 h-6 transition-transform",
                         isActive ? "scale-110" : "group-hover:scale-105"
                       )}
-                      strokeWidth={isActive ? 2.5 : 2}
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </Link>
@@ -138,7 +134,6 @@ export function Sidebar() {
                       "w-6 h-6 transition-transform",
                       isActive ? "scale-110" : "group-hover:scale-105"
                     )}
-                    strokeWidth={isActive ? 2.5 : 2}
                   />
                   <span className="text-instagram-base">{item.label}</span>
                 </Link>
@@ -191,10 +186,7 @@ export function Sidebar() {
                     )}
                     title={item.label}
                   >
-                    <Icon
-                      className="w-6 h-6 transition-transform group-hover:scale-105"
-                      strokeWidth={2}
-                    />
+                    <Icon className="w-6 h-6 transition-transform group-hover:scale-105" />
                   </button>
                 );
               }
@@ -215,7 +207,6 @@ export function Sidebar() {
                       "w-6 h-6 transition-transform",
                       isActive ? "scale-110" : "group-hover:scale-105"
                     )}
-                    strokeWidth={isActive ? 2.5 : 2}
                   />
                 </Link>
               );
@@ -235,7 +226,7 @@ export function Sidebar() {
                 title="로그인"
                 aria-label="로그인"
               >
-                <User className="w-6 h-6" strokeWidth={2} />
+                <User className="w-6 h-6" />
               </Link>
             </div>
           </SignedOut>

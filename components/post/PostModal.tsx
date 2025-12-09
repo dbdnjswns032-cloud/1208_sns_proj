@@ -282,6 +282,8 @@ export function PostModal({
     );
   }
 
+  const isOwnPost = user?.id === post.user.clerk_id;
+
   const timeAgo = formatDistanceToNow(new Date(post.created_at), {
     addSuffix: true,
     locale: ko,

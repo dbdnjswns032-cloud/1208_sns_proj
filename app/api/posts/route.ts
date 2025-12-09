@@ -74,6 +74,10 @@ export async function GET(request: NextRequest) {
         .select("*", { count: "exact", head: true })
         .eq("post_id", data.id);
 
+      // users 리レー션은 타입 상 배열로 추론될 수 있으므로 안전하게 풀어서 사용
+      const raw = data as any;
+      const userRow = Array.isArray(raw.users) ? raw.users[0] : raw.users;
+
       const post: PostWithStatsAndUser = {
         id: data.id,
         user_id: data.user_id,
@@ -85,10 +89,10 @@ export async function GET(request: NextRequest) {
         likes_count: likesCount || 0,
         comments_count: commentsCount || 0,
         user: {
-          id: data.users.id,
-          clerk_id: data.users.clerk_id,
-          name: data.users.name,
-          created_at: data.users.created_at,
+          id: userRow.id,
+          clerk_id: userRow.clerk_id,
+          name: userRow.name,
+          created_at: userRow.created_at,
         },
       };
 
@@ -156,6 +160,10 @@ export async function GET(request: NextRequest) {
           .select("*", { count: "exact", head: true })
           .eq("post_id", post.id);
 
+        // users 리レー션은 타입 상 배열일 수 있으므로 안전하게 첫 번째 요소를 사용
+        const rawPost = post as any;
+        const userRow = Array.isArray(rawPost.users) ? rawPost.users[0] : rawPost.users;
+
         return {
           id: post.id,
           user_id: post.user_id,
@@ -167,16 +175,19 @@ export async function GET(request: NextRequest) {
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
           user: {
-            id: post.users.id,
-            clerk_id: post.users.clerk_id,
-            name: post.users.name,
-            created_at: post.users.created_at,
+            id: userRow.id,
+            clerk_id: userRow.clerk_id,
+            name: userRow.name,
+            created_at: userRow.created_at,
           },
         };
       })
     );
 
-    return NextResponse.json({ posts: postsWithStats, hasMore: postsWithStats.length === limit });
+    return NextResponse.json({
+      posts: postsWithStats,
+      hasMore: postsWithStats.length === limit,
+    });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
