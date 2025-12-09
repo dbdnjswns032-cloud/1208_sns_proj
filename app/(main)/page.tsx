@@ -9,8 +9,19 @@
  */
 
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
-import { PostFeed } from "@/components/post/PostFeed";
+import dynamic from "next/dynamic";
 import type { PostWithStatsAndUser } from "@/lib/types";
+
+// PostFeed를 dynamic import로 로드 (빌드 에러 방지)
+const PostFeed = dynamic(
+  () =>
+    import("@/components/post/PostFeed").then((mod) => ({
+      default: mod.PostFeed,
+    })),
+  {
+    ssr: true,
+  },
+);
 
 async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
   try {

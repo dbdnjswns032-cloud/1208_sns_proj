@@ -31,17 +31,16 @@ export async function GET(request: NextRequest) {
     const postId = searchParams.get("postId");
     if (postId) {
       const { data, error } = await supabase
-        .from("post_stats")
+        .from("posts")
         .select(
           `
-          post_id,
+          id,
           user_id,
           image_url,
           caption,
           created_at,
-          likes_count,
-          comments_count,
-          users!post_stats_user_id_fkey (
+          updated_at,
+          users!posts_user_id_fkey (
             id,
             clerk_id,
             name,
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
           )
         `
         )
-        .eq("post_id", postId)
+        .eq("id", postId)
         .single();
 
       if (error) {
@@ -64,16 +63,27 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // 좋아요 수와 댓글 수 조회
+      const { count: likesCount } = await supabase
+        .from("likes")
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", data.id);
+
+      const { count: commentsCount } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", data.id);
+
       const post: PostWithStatsAndUser = {
-        id: data.post_id,
+        id: data.id,
         user_id: data.user_id,
         image_url: data.image_url,
         caption: data.caption,
         created_at: data.created_at,
-        updated_at: data.created_at,
-        post_id: data.post_id,
-        likes_count: data.likes_count || 0,
-        comments_count: data.comments_count || 0,
+        updated_at: data.updated_at,
+        post_id: data.id,
+        likes_count: likesCount || 0,
+        comments_count: commentsCount || 0,
         user: {
           id: data.users.id,
           clerk_id: data.users.clerk_id,
@@ -90,19 +100,18 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0", 10);
     const userId = searchParams.get("userId"); // 프로필 페이지용
 
-    // 기본 쿼리: post_stats 뷰에서 데이터 가져오기
+    // posts 테이블에서 직접 가져오기
     let query = supabase
-      .from("post_stats")
+      .from("posts")
       .select(
         `
-        post_id,
+        id,
         user_id,
         image_url,
         caption,
         created_at,
-        likes_count,
-        comments_count,
-        users!post_stats_user_id_fkey (
+        updated_at,
+        users!posts_user_id_fkey (
           id,
           clerk_id,
           name,
@@ -115,7 +124,16 @@ export async function GET(request: NextRequest) {
 
     // userId가 제공된 경우 필터링 (프로필 페이지용)
     if (userId) {
-      query = query.eq("user_id", userId);
+      // userId는 clerk_id이므로 먼저 Supabase user_id로 변환
+      const { data: userData } = await supabase
+        .from("users")
+        .select("id")
+        .eq("clerk_id", userId)
+        .single();
+
+      if (userData) {
+        query = query.eq("user_id", userData.id);
+      }
     }
 
     const { data, error } = await query;
@@ -125,26 +143,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 데이터 변환: PostWithStatsAndUser 타입으로 변환
-    const posts: PostWithStatsAndUser[] = (data || []).map((item: any) => ({
-      id: item.post_id,
-      user_id: item.user_id,
-      image_url: item.image_url,
-      caption: item.caption,
-      created_at: item.created_at,
-      updated_at: item.created_at, // post_stats에는 updated_at이 없으므로 created_at 사용
-      post_id: item.post_id,
-      likes_count: item.likes_count || 0,
-      comments_count: item.comments_count || 0,
-      user: {
-        id: item.users.id,
-        clerk_id: item.users.clerk_id,
-        name: item.users.name,
-        created_at: item.users.created_at,
-      },
-    }));
+    // 각 게시물에 대해 좋아요 수와 댓글 수를 별도로 조회
+    const postsWithStats: PostWithStatsAndUser[] = await Promise.all(
+      (data || []).map(async (post: any) => {
+        const { count: likesCount } = await supabase
+          .from("likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
 
-    return NextResponse.json({ posts, hasMore: posts.length === limit });
+        const { count: commentsCount } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          image_url: post.image_url,
+          caption: post.caption,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          post_id: post.id,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          user: {
+            id: post.users.id,
+            clerk_id: post.users.clerk_id,
+            name: post.users.name,
+            created_at: post.users.created_at,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json({ posts: postsWithStats, hasMore: postsWithStats.length === limit });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
