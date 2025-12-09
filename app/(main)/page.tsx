@@ -9,8 +9,21 @@
  */
 
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
-import { PostFeed } from "@/components/post/PostFeed";
+import dynamic from "next/dynamic";
 import type { PostWithStatsAndUser } from "@/lib/types";
+
+// PostFeed를 클라이언트 사이드에서만 로드 (빌드 에러 방지)
+const PostFeed = dynamic(
+  () => import("@/components/post/PostFeed").then((mod) => ({ default: mod.PostFeed })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full py-12 text-center">
+        <p className="text-[var(--instagram-text-secondary)]">로딩 중...</p>
+      </div>
+    ),
+  }
+);
 
 async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
   try {

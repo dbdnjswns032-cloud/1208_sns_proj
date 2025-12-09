@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    // Next.js 15에서 Server Component와 Client Component 간 import 문제 해결
+    serverComponentsExternalPackages: [],
+  },
 };
 
 export default nextConfig;
