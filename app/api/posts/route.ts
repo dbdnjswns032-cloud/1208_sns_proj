@@ -54,21 +54,15 @@ export async function GET(request: NextRequest) {
 
       if (error) {
         console.error("Error fetching post:", error);
-        return NextResponse.json(
-          { error: "게시물을 불러오는 중 오류가 발생했습니다." },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
       if (!data) {
         return NextResponse.json(
-          { error: "게시물을 찾을 수 없습니다." },
+          { error: "Post not found" },
           { status: 404 }
         );
       }
-
-      // users는 관계 쿼리로 인해 배열일 수 있으므로 첫 번째 요소 사용
-      const userData = Array.isArray(data.users) ? data.users[0] : data.users;
 
       const post: PostWithStatsAndUser = {
         id: data.post_id,
@@ -81,10 +75,10 @@ export async function GET(request: NextRequest) {
         likes_count: data.likes_count || 0,
         comments_count: data.comments_count || 0,
         user: {
-          id: userData.id,
-          clerk_id: userData.clerk_id,
-          name: userData.name,
-          created_at: userData.created_at,
+          id: data.users.id,
+          clerk_id: data.users.clerk_id,
+          name: data.users.name,
+          created_at: data.users.created_at,
         },
       };
 
@@ -165,10 +159,7 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "로그인이 필요합니다." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -177,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     if (!imageFile) {
       return NextResponse.json(
-        { error: "이미지 파일을 선택해주세요." },
+        { error: "Image file is required" },
         { status: 400 }
       );
     }
@@ -185,7 +176,7 @@ export async function POST(request: NextRequest) {
     // 파일 타입 검증
     if (!imageFile.type.startsWith("image/")) {
       return NextResponse.json(
-        { error: "이미지 파일만 업로드할 수 있습니다." },
+        { error: "Only image files are allowed" },
         { status: 400 }
       );
     }
@@ -193,7 +184,7 @@ export async function POST(request: NextRequest) {
     // 파일 크기 검증 (5MB)
     if (imageFile.size > 5 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "파일 크기는 5MB를 초과할 수 없습니다." },
+        { error: "File size must be less than 5MB" },
         { status: 400 }
       );
     }
@@ -201,7 +192,7 @@ export async function POST(request: NextRequest) {
     // 캡션 길이 검증 (2,200자)
     if (caption && caption.length > 2200) {
       return NextResponse.json(
-        { error: "캡션은 2,200자를 초과할 수 없습니다." },
+        { error: "Caption must be less than 2,200 characters" },
         { status: 400 }
       );
     }
@@ -246,7 +237,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error("Error uploading image:", uploadError);
       return NextResponse.json(
-        { error: "이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { error: uploadError.message },
         { status: 500 }
       );
     }
@@ -277,7 +268,7 @@ export async function POST(request: NextRequest) {
         .remove([uploadData.path]);
 
       return NextResponse.json(
-        { error: "게시물 저장에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { error: postError.message },
         { status: 500 }
       );
     }

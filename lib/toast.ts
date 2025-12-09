@@ -2,42 +2,36 @@
  * @file lib/toast.ts
  * @description Toast 알림 유틸리티 함수
  *
- * sonner를 사용한 Toast 알림 함수들을 export합니다.
- * 컴포넌트에서 직접 import하여 사용할 수 있습니다.
+ * sonner 라이브러리를 사용한 Toast 알림
  */
 
 import { toast as sonnerToast } from "sonner";
 
 /**
- * 성공 메시지 표시
+ * 성공 메시지 Toast
  */
-export function toastSuccess(message: string) {
+export function toastSuccess(message: string): void {
   sonnerToast.success(message);
 }
 
 /**
- * 에러 메시지 표시
+ * 에러 메시지 Toast
  */
-export function toastError(message: string) {
+export function toastError(message: string): void {
   sonnerToast.error(message);
 }
 
 /**
- * 정보 메시지 표시
+ * 정보 메시지 Toast
  */
-export function toastInfo(message: string) {
+export function toastInfo(message: string): void {
   sonnerToast.info(message);
 }
 
 /**
- * 경고 메시지 표시
+ * 경고 메시지 Toast
  */
-export function toastWarning(message: string) {
+export function toastWarning(message: string): void {
   sonnerToast.warning(message);
 }
-
-/**
- * 기본 Toast 함수 (sonner의 toast 함수 직접 export)
- */
-export { sonnerToast as toast };
 

@@ -11,11 +11,12 @@
 
 "use client";
 
-import { useState, useEffect, memo, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Heart, MessageCircle } from "lucide-react";
 import type { PostWithStatsAndUser } from "@/lib/types";
 import { PostModal } from "@/components/post/PostModal";
+import { cn } from "@/lib/utils";
 
 interface PostGridProps {
   posts: PostWithStatsAndUser[];
@@ -23,7 +24,7 @@ interface PostGridProps {
   onPostDeleted?: (postId: string) => void; // 게시물 삭제 콜백
 }
 
-function PostGridComponent({ posts, onPostClick, onPostDeleted }: PostGridProps) {
+export function PostGrid({ posts, onPostClick, onPostDeleted }: PostGridProps) {
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
   const [currentPosts, setCurrentPosts] = useState(posts);
@@ -33,33 +34,26 @@ function PostGridComponent({ posts, onPostClick, onPostDeleted }: PostGridProps)
     setCurrentPosts(posts);
   }, [posts]);
 
-  const handlePostClick = useCallback(
-    (postId: string) => {
-      setModalPostId(postId);
-      onPostClick?.(postId);
-    },
-    [onPostClick]
-  );
+  const handlePostClick = (postId: string) => {
+    setModalPostId(postId);
+    onPostClick?.(postId);
+  };
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     setModalPostId(null);
-  }, []);
+  };
 
   // 게시물 삭제 핸들러
-  const handlePostDelete = useCallback(
-    (postId: string) => {
-      setCurrentPosts((prev) => prev.filter((p) => p.id !== postId));
-      onPostDeleted?.(postId);
-      handleCloseModal();
-    },
-    [onPostDeleted, handleCloseModal]
-  );
+  const handlePostDelete = (postId: string) => {
+    setCurrentPosts((prev) => prev.filter((p) => p.id !== postId));
+    onPostDeleted?.(postId);
+    handleCloseModal();
+  };
 
-  // 모달에 표시할 게시물 찾기 (메모이제이션)
-  const modalPost = useMemo(
-    () => (modalPostId ? currentPosts.find((p) => p.id === modalPostId) : undefined),
-    [modalPostId, currentPosts]
-  );
+  // 모달에 표시할 게시물 찾기
+  const modalPost = modalPostId
+    ? currentPosts.find((p) => p.id === modalPostId)
+    : undefined;
 
   if (currentPosts.length === 0) {
     return (
@@ -87,8 +81,7 @@ function PostGridComponent({ posts, onPostClick, onPostDeleted }: PostGridProps)
               alt={post.caption || "게시물 이미지"}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 33vw, 210px"
-              loading="lazy"
+              sizes="(max-width: 768px) 33vw, (max-width: 1024px) 33vw, 210px"
             />
             {/* Hover 오버레이 (Desktop/Tablet만) */}
             {hoveredPostId === post.id && (
@@ -125,7 +118,4 @@ function PostGridComponent({ posts, onPostClick, onPostDeleted }: PostGridProps)
     </>
   );
 }
-
-// React.memo로 메모이제이션
-export const PostGrid = memo(PostGridComponent);
 

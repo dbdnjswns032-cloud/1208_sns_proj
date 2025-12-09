@@ -13,14 +13,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, PlusSquare, Heart, User } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { Home, Search, PlusSquare, Heart, User, LogIn } from "lucide-react";
+import { useUser, SignedOut } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { CreatePostModal } from "@/components/post/CreatePostModal";
 
 interface BottomNavItem {
   href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   requiresAuth?: boolean;
 }
@@ -35,7 +35,7 @@ const bottomNavItems: BottomNavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
@@ -44,6 +44,26 @@ export function BottomNav() {
         {bottomNavItems.map((item) => {
           // 인증이 필요한 항목이고 로그인하지 않은 경우 건너뛰기
           if (item.requiresAuth && !isSignedIn) {
+            // 프로필 항목은 로그인 버튼으로 대체
+            if (item.href === "/profile") {
+              return (
+                <Link
+                  key="login"
+                  href="/sign-in"
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full transition-colors",
+                    "hover:bg-[var(--instagram-background)]",
+                    "text-[var(--instagram-text-primary)]"
+                  )}
+                  aria-label="로그인"
+                >
+                  <LogIn
+                    className="w-6 h-6 transition-transform group-hover:scale-105"
+                    strokeWidth={2}
+                  />
+                </Link>
+              );
+            }
             return null;
           }
 
@@ -59,16 +79,13 @@ export function BottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full transition-colors",
                   "hover:bg-[var(--instagram-background)]",
-                  "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                   "text-[var(--instagram-text-primary)]"
                 )}
                 aria-label={item.label}
-                aria-current={isActive ? "page" : undefined}
               >
                 <Icon
                   className="w-6 h-6 transition-transform group-hover:scale-105"
                   strokeWidth={2}
-                  aria-hidden={true}
                 />
               </button>
             );
@@ -81,11 +98,9 @@ export function BottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full transition-colors",
                 "hover:bg-[var(--instagram-background)]",
-                "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                 isActive && "text-[var(--instagram-text-primary)]"
               )}
               aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
             >
               <Icon
                 className={cn(
@@ -93,7 +108,6 @@ export function BottomNav() {
                   isActive ? "scale-110" : "group-hover:scale-105"
                 )}
                 strokeWidth={isActive ? 2.5 : 2}
-                aria-hidden={true}
               />
             </Link>
           );

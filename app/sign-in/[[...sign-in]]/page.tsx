@@ -10,7 +10,15 @@
 
 import { SignIn } from "@clerk/nextjs";
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string }>;
+}) {
+  // 쿼리 파라미터에서 리다이렉트 URL 가져오기
+  const params = await searchParams;
+  const redirectUrl = params.redirect_url || "/";
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <SignIn
@@ -22,7 +30,7 @@ export default function SignInPage() {
         }}
         routing="path"
         path="/sign-in"
-        redirectUrl="/"
+        redirectUrl={redirectUrl}
         signUpUrl="/sign-up"
       />
     </div>

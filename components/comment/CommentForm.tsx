@@ -10,13 +10,13 @@
 
 "use client";
 
-import { useState, FormEvent, useCallback } from "react";
+import { memo, useState, FormEvent, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Send } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toastError } from "@/lib/toast";
-import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
 
 interface CommentFormProps {
   postId: string;
@@ -24,7 +24,7 @@ interface CommentFormProps {
   placeholder?: string;
 }
 
-export function CommentForm({
+function CommentFormComponent({
   postId,
   onCommentAdded,
   placeholder = "댓글 달기...",
@@ -32,12 +32,13 @@ export function CommentForm({
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { user } = useUser();
+  const router = useRouter();
 
   const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
 
     if (!user) {
-      toastError("로그인이 필요합니다.");
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
@@ -48,24 +49,20 @@ export function CommentForm({
     setSubmitting(true);
 
     try {
-      const response = await fetchWithTimeout(
-        "/api/comments",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            postId,
-            content: content.trim(),
-          }),
+      const response = await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        10000 // 10초 타임아웃
-      );
+        body: JSON.stringify({
+          postId,
+          content: content.trim(),
+        }),
+      });
 
       if (!response.ok) {
-        const errorMessage = await extractErrorMessage(response);
-        throw new Error(errorMessage);
+        const error = await response.json();
+        throw new Error(error.error || "댓글 작성에 실패했습니다.");
       }
 
       // 성공 시 입력 필드 초기화
@@ -73,22 +70,22 @@ export function CommentForm({
       onCommentAdded?.();
     } catch (error) {
       console.error("Error submitting comment:", error);
-      const errorMessage = getErrorMessage(error, "댓글 작성에 실패했습니다.");
-      toastError(errorMessage);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "댓글 작성에 실패했습니다."
+      );
     } finally {
       setSubmitting(false);
     }
-  }, [user, content, postId, onCommentAdded]);
+  }, [postId, content, user, onCommentAdded]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSubmit(e);
-      }
-    },
-    [handleSubmit]
-  );
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  }, [handleSubmit]);
 
   if (!user) {
     return (
@@ -134,4 +131,13 @@ export function CommentForm({
     </form>
   );
 }
+
+// React.memo로 메모이제이션 (props가 변경되지 않으면 리렌더링 방지)
+export const CommentForm = memo(CommentFormComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.postId === nextProps.postId &&
+    prevProps.placeholder === nextProps.placeholder &&
+    prevProps.onCommentAdded === nextProps.onCommentAdded
+  );
+});
 

@@ -3,9 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { koKR } from "@clerk/localizations";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { SyncUserProvider } from "@/components/providers/sync-user-provider";
-import { NetworkStatusProvider } from "@/components/providers/network-status-provider";
 import { Toaster } from "sonner";
+import { SyncUserProvider } from "@/components/providers/sync-user-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -61,10 +60,8 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <SyncUserProvider>
-            <NetworkStatusProvider>
-              {children}
-              <Toaster position="top-center" richColors />
-            </NetworkStatusProvider>
+            {children}
+            <Toaster position="top-center" richColors />
           </SyncUserProvider>
         </body>
       </html>

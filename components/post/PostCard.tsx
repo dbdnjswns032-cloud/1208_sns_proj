@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MoreHorizontal, MessageCircle, Send, Bookmark, Trash2 } from "lucide-react";
@@ -25,8 +25,6 @@ import { LikeButton } from "./LikeButton";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 import { CommentList } from "@/components/comment/CommentList";
 import { CommentForm } from "@/components/comment/CommentForm";
-import { toastError } from "@/lib/toast";
-import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,10 +46,9 @@ interface PostCardProps {
   post: PostWithStatsAndUser;
   onImageClick?: (postId: string) => void;
   onPostDeleted?: (postId: string) => void;
-  priority?: boolean; // 이미지 우선 로딩 여부 (첫 3개만 true)
 }
 
-export function PostCard({ post, onImageClick, onPostDeleted, priority = false }: PostCardProps) {
+function PostCardComponent({ post, onImageClick, onPostDeleted }: PostCardProps) {
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -90,7 +87,7 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
           .single();
 
         setIsLiked(!!likeData);
-      } catch {
+      } catch (error) {
         // 좋아요가 없으면 에러가 발생할 수 있음 (정상)
         setIsLiked(false);
       }
@@ -104,45 +101,34 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
     setLikesCount(post.likes_count);
   }, [post.likes_count]);
 
-  // 캡션 처리: 2줄 초과 시 "... 더 보기" 표시 (메모이제이션)
-  const { displayCaption, shouldTruncate } = useMemo(() => {
-    const captionLines = post.caption?.split("\n") || [];
-    const shouldTruncate = captionLines.length > 2 || (post.caption && post.caption.length > 100);
-    const displayCaption = showFullCaption
-      ? post.caption
-      : shouldTruncate
-      ? post.caption?.substring(0, 100) + "..."
-      : post.caption;
-    return { displayCaption, shouldTruncate };
-  }, [post.caption, showFullCaption]);
+  // 캡션 처리: 2줄 초과 시 "... 더 보기" 표시
+  const captionLines = post.caption?.split("\n") || [];
+  const shouldTruncate = captionLines.length > 2 || (post.caption && post.caption.length > 100);
+  const displayCaption = showFullCaption
+    ? post.caption
+    : shouldTruncate
+    ? post.caption?.substring(0, 100) + "..."
+    : post.caption;
 
-  // 시간 포맷팅 (메모이제이션)
-  const timeAgo = useMemo(
-    () =>
-      formatDistanceToNow(new Date(post.created_at), {
-        addSuffix: true,
-        locale: ko,
-      }),
-    [post.created_at]
-  );
+  // 시간 포맷팅
+  const timeAgo = formatDistanceToNow(new Date(post.created_at), {
+    addSuffix: true,
+    locale: ko,
+  });
 
-  // 게시물 삭제 핸들러
+  // 게시물 삭제 핸들러 (메모이제이션)
   const handleDelete = useCallback(async () => {
     if (!isOwnPost || isDeleting) return;
 
     setIsDeleting(true);
     try {
-      const response = await fetchWithTimeout(
-        `/api/posts/${post.id}`,
-        {
-          method: "DELETE",
-        },
-        10000 // 10초 타임아웃
-      );
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        const errorMessage = await extractErrorMessage(response);
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        throw new Error(errorData.error || "게시물 삭제에 실패했습니다.");
       }
 
       // 삭제 성공 시 부모 컴포넌트에 알림
@@ -150,12 +136,11 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Error deleting post:", error);
-      const errorMessage = getErrorMessage(error, "게시물 삭제에 실패했습니다.");
-      toastError(errorMessage);
+      alert(error instanceof Error ? error.message : "게시물 삭제에 실패했습니다.");
     } finally {
       setIsDeleting(false);
     }
-  }, [isOwnPost, isDeleting, post.id, onPostDeleted]);
+  }, [post.id, isOwnPost, isDeleting, onPostDeleted]);
 
   return (
     <article className="bg-[var(--instagram-card-background)] border border-[var(--instagram-border)] rounded-lg mb-6">
@@ -226,8 +211,7 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
           fill
           className="object-cover select-none pointer-events-none"
           sizes="(max-width: 768px) 100vw, 630px"
-          priority={priority}
-          loading={priority ? undefined : "lazy"}
+          priority
         />
         {/* 더블탭 좋아요를 위한 투명한 오버레이 */}
         <div className="absolute inset-0 pointer-events-auto">
@@ -373,4 +357,18 @@ export function PostCard({ post, onImageClick, onPostDeleted, priority = false }
     </article>
   );
 }
+
+// React.memo로 메모이제이션 (props가 변경되지 않으면 리렌더링 방지)
+export const PostCard = memo(PostCardComponent, (prevProps, nextProps) => {
+  // post 객체의 주요 속성만 비교
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.post.likes_count === nextProps.post.likes_count &&
+    prevProps.post.comments_count === nextProps.post.comments_count &&
+    prevProps.post.caption === nextProps.post.caption &&
+    prevProps.post.created_at === nextProps.post.created_at &&
+    prevProps.onImageClick === nextProps.onImageClick &&
+    prevProps.onPostDeleted === nextProps.onPostDeleted
+  );
+});
 

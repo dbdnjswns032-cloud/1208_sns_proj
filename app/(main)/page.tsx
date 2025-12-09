@@ -16,54 +16,77 @@ async function getInitialPosts(): Promise<PostWithStatsAndUser[]> {
   try {
     const supabase = createClerkSupabaseClient();
 
-    // 초기 10개 게시물 가져오기
+    // posts 테이블에서 직접 가져오고 users와 JOIN
     const { data, error } = await supabase
-      .from("post_stats")
+      .from("posts")
       .select(
         `
-        post_id,
+        id,
         user_id,
         image_url,
         caption,
         created_at,
-        likes_count,
-        comments_count,
-        users!post_stats_user_id_fkey (
+        updated_at,
+        users!posts_user_id_fkey (
           id,
           clerk_id,
           name,
           created_at
         )
-      `
+      `,
       )
       .order("created_at", { ascending: false })
       .limit(10);
 
     if (error) {
-      console.error("Error fetching initial posts:", error);
+      // 상세한 에러 로깅
+      console.error("Error fetching initial posts:", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        stringified: JSON.stringify(error, null, 2),
+      });
       return [];
     }
 
-    // 데이터 변환: PostWithStatsAndUser 타입으로 변환
-    const posts: PostWithStatsAndUser[] = (data || []).map((item: any) => ({
-      id: item.post_id,
-      user_id: item.user_id,
-      image_url: item.image_url,
-      caption: item.caption,
-      created_at: item.created_at,
-      updated_at: item.created_at,
-      post_id: item.post_id,
-      likes_count: item.likes_count || 0,
-      comments_count: item.comments_count || 0,
-      user: {
-        id: item.users.id,
-        clerk_id: item.users.clerk_id,
-        name: item.users.name,
-        created_at: item.users.created_at,
-      },
-    }));
+    // 각 게시물에 대해 좋아요 수와 댓글 수를 별도로 조회
+    const postsWithStats: PostWithStatsAndUser[] = await Promise.all(
+      (data || []).map(async (post: any) => {
+        // 좋아요 수 조회
+        const { count: likesCount } = await supabase
+          .from("likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
 
-    return posts;
+        // 댓글 수 조회
+        const { count: commentsCount } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          image_url: post.image_url,
+          caption: post.caption,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          post_id: post.id,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          user: {
+            id: post.users.id,
+            clerk_id: post.users.clerk_id,
+            name: post.users.name,
+            created_at: post.users.created_at,
+          },
+        };
+      }),
+    );
+
+    console.log(`[HomePage] Loaded ${postsWithStats.length} initial posts`);
+    return postsWithStats;
   } catch (error) {
     console.error("Unexpected error:", error);
     return [];
@@ -79,4 +102,3 @@ export default async function HomePage() {
     </div>
   );
 }
-

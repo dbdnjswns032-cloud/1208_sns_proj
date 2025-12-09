@@ -13,7 +13,6 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { toastError } from "@/lib/toast";
 
 interface FollowButtonProps {
   followingId: string; // 팔로우할 사용자의 clerk_id
@@ -68,14 +67,14 @@ export function FollowButton({
         setIsFollowing(previousState);
         onFollowChange?.(previousState);
         const errorData = await response.json();
-        toastError(errorData.error || "팔로우 처리 중 오류가 발생했습니다.");
+        alert(errorData.error || "팔로우 처리 중 오류가 발생했습니다.");
       }
     } catch (error) {
       console.error("Failed to toggle follow:", error);
       // 네트워크 오류 시 UI 롤백
       setIsFollowing(previousState);
       onFollowChange?.(previousState);
-      toastError("네트워크 오류가 발생했습니다.");
+      alert("네트워크 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }

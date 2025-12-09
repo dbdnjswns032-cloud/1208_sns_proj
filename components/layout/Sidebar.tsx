@@ -14,16 +14,25 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, PlusSquare, User } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, SignedOut } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { CreatePostModal } from "@/components/post/CreatePostModal";
+
+// CreatePostModal을 동적 import로 lazy loading
+const CreatePostModal = dynamic(
+  () => import("@/components/post/CreatePostModal").then((mod) => ({ default: mod.CreatePostModal })),
+  {
+    ssr: false,
+    loading: () => null, // 모달이 열릴 때만 로드되므로 로딩 상태 불필요
+  }
+);
 
 interface NavItem {
   href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   requiresAuth?: boolean;
 }
@@ -72,15 +81,12 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors w-full text-left",
                       "hover:bg-[var(--instagram-background)]",
-                      "font-instagram-normal text-[var(--instagram-text-primary)]",
-                      "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2"
+                      "font-instagram-normal text-[var(--instagram-text-primary)]"
                     )}
-                    aria-label={item.label}
                   >
                     <Icon
                       className="w-6 h-6 transition-transform group-hover:scale-105"
                       strokeWidth={2}
-                      aria-hidden={true}
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </button>
@@ -98,13 +104,10 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
                       "hover:bg-[var(--instagram-background)]",
-                      "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                       isActive
                         ? "font-instagram-semibold text-[var(--instagram-text-primary)]"
                         : "font-instagram-normal text-[var(--instagram-text-primary)]"
                     )}
-                    aria-label={item.label}
-                    aria-current={isActive ? "page" : undefined}
                   >
                     <Icon
                       className={cn(
@@ -112,7 +115,6 @@ export function Sidebar() {
                         isActive ? "scale-110" : "group-hover:scale-105"
                       )}
                       strokeWidth={isActive ? 2.5 : 2}
-                      aria-hidden={true}
                     />
                     <span className="text-instagram-base">{item.label}</span>
                   </Link>
@@ -126,13 +128,10 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
                     "hover:bg-[var(--instagram-background)]",
-                    "focus:outline-none focus:ring-2 focus:ring-[var(--instagram-blue)] focus:ring-offset-2",
                     isActive
                       ? "font-instagram-semibold text-[var(--instagram-text-primary)]"
                       : "font-instagram-normal text-[var(--instagram-text-primary)]"
                   )}
-                  aria-label={item.label}
-                  aria-current={isActive ? "page" : undefined}
                 >
                   <Icon
                     className={cn(
@@ -140,13 +139,29 @@ export function Sidebar() {
                       isActive ? "scale-110" : "group-hover:scale-105"
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
-                    aria-hidden="true"
                   />
                   <span className="text-instagram-base">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
+
+          {/* 비로그인 사용자용 로그인 버튼 */}
+          <SignedOut>
+            <div className="mt-auto mb-4">
+              <Link
+                href="/sign-in"
+                className={cn(
+                  "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors w-full",
+                  "bg-[var(--instagram-blue)] text-white",
+                  "hover:bg-[var(--instagram-blue)]/90",
+                  "font-instagram-semibold text-instagram-base"
+                )}
+              >
+                <span>로그인</span>
+              </Link>
+            </div>
+          </SignedOut>
         </div>
       </div>
 
@@ -206,6 +221,24 @@ export function Sidebar() {
               );
             })}
           </nav>
+
+          {/* 비로그인 사용자용 로그인 버튼 (Tablet) */}
+          <SignedOut>
+            <div className="mt-auto mb-4">
+              <Link
+                href="/sign-in"
+                className={cn(
+                  "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
+                  "bg-[var(--instagram-blue)] text-white",
+                  "hover:bg-[var(--instagram-blue)]/90"
+                )}
+                title="로그인"
+                aria-label="로그인"
+              >
+                <User className="w-6 h-6" strokeWidth={2} />
+              </Link>
+            </div>
+          </SignedOut>
         </div>
       </div>
 

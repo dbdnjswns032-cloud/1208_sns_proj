@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# lint-staged 실행
+pnpm exec lint-staged || {
+  echo "❌ Lint failed. Please fix the errors and try again."
+  exit 1
+}
+

@@ -16,10 +16,7 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "로그인이 필요합니다." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -27,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     if (!postId || !content || !content.trim()) {
       return NextResponse.json(
-        { error: "게시물 ID와 댓글 내용을 입력해주세요." },
+        { error: "postId and content are required" },
         { status: 400 }
       );
     }
@@ -43,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (userError || !userData) {
       return NextResponse.json(
-        { error: "사용자를 찾을 수 없습니다." },
+        { error: "User not found" },
         { status: 404 }
       );
     }
@@ -61,17 +58,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Error creating comment:", error);
-      return NextResponse.json(
-        { error: "댓글 작성에 실패했습니다. 잠시 후 다시 시도해주세요." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, comment: data });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -82,10 +76,7 @@ export async function DELETE(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "로그인이 필요합니다." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -93,7 +84,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!commentId) {
       return NextResponse.json(
-        { error: "댓글 ID가 필요합니다." },
+        { error: "commentId is required" },
         { status: 400 }
       );
     }
@@ -109,7 +100,7 @@ export async function DELETE(request: NextRequest) {
 
     if (userError || !userData) {
       return NextResponse.json(
-        { error: "사용자를 찾을 수 없습니다." },
+        { error: "User not found" },
         { status: 404 }
       );
     }
@@ -123,7 +114,7 @@ export async function DELETE(request: NextRequest) {
 
     if (commentError || !commentData) {
       return NextResponse.json(
-        { error: "댓글을 찾을 수 없습니다." },
+        { error: "Comment not found" },
         { status: 404 }
       );
     }
@@ -131,7 +122,7 @@ export async function DELETE(request: NextRequest) {
     // 본인 댓글인지 확인
     if (commentData.user_id !== userData.id) {
       return NextResponse.json(
-        { error: "본인의 댓글만 삭제할 수 있습니다." },
+        { error: "Forbidden: You can only delete your own comments" },
         { status: 403 }
       );
     }
@@ -145,7 +136,7 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       console.error("Error deleting comment:", deleteError);
       return NextResponse.json(
-        { error: "댓글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        { error: deleteError.message },
         { status: 500 }
       );
     }
@@ -154,7 +145,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useState, useEffect, memo, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -20,9 +20,6 @@ import { useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabase/clerk-client";
 import type { CommentWithUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CommentListSkeleton } from "./CommentListSkeleton";
-import { toastError } from "@/lib/toast";
-import { fetchWithTimeout, extractErrorMessage, getErrorMessage } from "@/lib/api-error-handler";
 
 interface CommentListProps {
   postId: string;
@@ -31,7 +28,7 @@ interface CommentListProps {
   onDelete?: () => void; // 삭제 후 콜백
 }
 
-function CommentListComponent({
+export function CommentList({
   postId,
   limit = 2,
   showAll = false,
@@ -103,7 +100,7 @@ function CommentListComponent({
     fetchComments();
   }, [postId, supabase]);
 
-  const handleDelete = useCallback(async (commentId: string) => {
+  const handleDelete = async (commentId: string) => {
     if (!user) return;
 
     if (!confirm("댓글을 삭제하시겠습니까?")) {
@@ -111,17 +108,12 @@ function CommentListComponent({
     }
 
     try {
-      const response = await fetchWithTimeout(
-        `/api/comments?commentId=${commentId}`,
-        {
-          method: "DELETE",
-        },
-        10000 // 10초 타임아웃
-      );
+      const response = await fetch(`/api/comments?commentId=${commentId}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        const errorMessage = await extractErrorMessage(response);
-        throw new Error(errorMessage);
+        throw new Error("댓글 삭제에 실패했습니다.");
       }
 
       // 댓글 목록에서 제거
@@ -129,21 +121,16 @@ function CommentListComponent({
       onDelete?.();
     } catch (error) {
       console.error("Error deleting comment:", error);
-      const errorMessage = getErrorMessage(error, "댓글 삭제에 실패했습니다.");
-      toastError(errorMessage);
+      alert("댓글 삭제에 실패했습니다.");
     }
-  }, [user, onDelete]);
-
-  // 표시할 댓글 (limit 적용, 메모이제이션) - Hook은 조건부 반환 전에 호출
-  const displayComments = useMemo(
-    () => (showAll ? comments : comments.slice(-limit)),
-    [comments, showAll, limit]
-  );
+  };
 
   if (loading) {
     return (
       <div className="px-4 pb-4">
-        <CommentListSkeleton count={limit} />
+        <div className="text-instagram-xs text-[var(--instagram-text-secondary)]">
+          댓글 로딩 중...
+        </div>
       </div>
     );
   }
@@ -151,6 +138,9 @@ function CommentListComponent({
   if (comments.length === 0) {
     return null;
   }
+
+  // 표시할 댓글 (limit 적용)
+  const displayComments = showAll ? comments : comments.slice(-limit);
 
   return (
     <div
@@ -211,7 +201,4 @@ function CommentListComponent({
     </div>
   );
 }
-
-// React.memo로 메모이제이션
-export const CommentList = memo(CommentListComponent);
 

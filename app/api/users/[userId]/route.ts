@@ -29,21 +29,15 @@ export async function GET(
 
     if (error) {
       console.error("Error fetching user:", error);
-      if (error.code === "PGRST116") {
-        return NextResponse.json(
-          { error: "사용자를 찾을 수 없습니다." },
-          { status: 404 }
-        );
-      }
       return NextResponse.json(
-        { error: "사용자 정보를 불러오는 중 오류가 발생했습니다." },
-        { status: 500 }
+        { error: error.message },
+        { status: error.code === "PGRST116" ? 404 : 500 }
       );
     }
 
     if (!data) {
       return NextResponse.json(
-        { error: "사용자를 찾을 수 없습니다." },
+        { error: "User not found" },
         { status: 404 }
       );
     }
@@ -75,7 +69,7 @@ export async function GET(
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
